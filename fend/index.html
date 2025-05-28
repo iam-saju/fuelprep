@@ -10,7 +10,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/markmap-lib@0.15.0/dist/browser.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/markmap-view@0.15.0/dist/index.min.js"></script>
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -203,8 +202,8 @@
         .category-geography { background-color: #10B981; }          
         .category-polity { background-color: #3B82F6; }          
         .category-economy { background-color: #F59E0B; }          
-        .category-environment { background-color: #059669; }         
-        .category-science { background-color: #6366F1; }         
+        .category-environment { background-color: #059669; }          
+        .category-science { background-color: #6366F1; }          
 
         .prose .text-indigo-600 { color: #4f46e5 !important; }
         .prose .hover\:text-indigo-800:hover { color: #3730a3 !important; }
@@ -224,16 +223,16 @@
             width: 100%;
             height: 100%;
         }
-        [x-cloak] { display: none !important; }
+        /* [x-cloak] { display: none !important; } */ /* Alpine.js related, commented out */
 
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-50 to-sky-100">
     <div id="app" class="min-h-screen p-2 sm:p-4 font-inter text-gray-800 flex flex-col">
         <header class="py-6 sm:py-8 bg-white shadow-xl rounded-xl mb-6 sm:mb-8 flex flex-col items-center px-4 sm:px-6">
-            <button @click="goToMain" class="flex items-center justify-center w-full mb-4 focus:outline-none">
-                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600 mr-3"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                <h1 class="text-3xl sm:text-4xl font-bold text-indigo-700">fuelprep</h1>
+            <button @click="goToMain" class="flex items-center justify-center w-full mb-4 focus:outline-none group">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600 mr-3 transition-transform duration-200 ease-in-out group-hover:scale-110"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                <h1 class="text-3xl sm:text-4xl font-bold text-indigo-700 group-hover:text-orange-500 transition-colors duration-200">fuelprep</h1>
             </button>
             <nav class="flex justify-center space-x-2 sm:space-x-4 w-full">
                 <button @click="goToDashboard" 
@@ -599,7 +598,7 @@
 
             <div class="mt-8 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 mb-8">
                  <button @click="addToDashboard" :disabled="isAlreadyInDashboard(selectedCard.id)" 
-                        class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-medium py-2.5 px-4 rounded-lg shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                         class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-medium py-2.5 px-4 rounded-lg shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     {{ isAlreadyInDashboard(selectedCard.id) ? 'Added to Dashboard' : 'Add to Dashboard' }}
                 </button>
                  <button @click="initiateRefresh(selectedCard, 'content')" :disabled="selectedCard.isRefreshing && selectedCard.activeRefreshType === 'content'" class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white font-medium py-2.5 px-4 rounded-lg shadow-md transition-colors disabled:opacity-50 flex items-center justify-center">
@@ -977,6 +976,17 @@
                     const viewCardDetail = (card) => { 
                         selectedCard.value = card; 
                         currentView.value = 'detail'; 
+                        Vue.nextTick(() => {
+                            if (detailViewContainer.value) {
+                                detailViewContainer.value.scrollTop = 0;
+                            }
+                            // Reset PYQ state for the new card
+                            selectedCardPYQs.value = [];
+                            pyqOffset.value = 0;
+                            noMorePYQs.value = false;
+                            pyqError.value = '';
+                            loadInitialPYQs(); // Load PYQs for the newly selected card
+                        });
                     };
 
                     const formattedContent = (content) => {
@@ -1071,7 +1081,6 @@
 
                         if (isManualRefreshOrCategoryChange) {
                             prelimsTopics.value = []; 
-                            // No WebSocket to close
                             showScrollLoader.value = false; 
                         }
                         
@@ -1089,14 +1098,13 @@
                         displayGlobalMessage(`Fetching cards for '${currentCategory}'...`, "info", 4000);
                         
                         try {
-                            // Use the new endpoint: /api/generate_study_cards
                             const response = await fetch(`${API_BASE_URL}/generate_study_cards`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ 
                                     category: currentCategory,
-                                    count: CARDS_PER_PAGE_HTTP, // Request a batch of cards
-                                    exclude_titles: titlesToExclude // Send already displayed titles for this session/category
+                                    count: CARDS_PER_PAGE_HTTP,
+                                    exclude_titles: titlesToExclude 
                                 })
                             });
                             if (!response.ok) {
@@ -1129,10 +1137,10 @@
                             console.error(`Error fetching study cards for ${currentCategory}:`, error);
                             let detailedErrorMsg = `Error loading cards for '${currentCategory}': ${error.message}`;
                             if (error.message.toLowerCase().includes("failed to fetch")) {
-                                detailedErrorMsg += `\n\nIs the backend server running at ${API_BASE_URL}?`;
-                                console.error("FETCH FAILED: Ensure backend server is running and accessible.");
+                                detailedErrorMsg += `\n\nIs the backend server running at ${API_BASE_URL}? Please ensure it's active and accessible. Check the browser console (Network tab) for more details.`;
+                                console.error(`FETCH FAILED: Ensure backend server is running at ${API_BASE_URL} and accessible. Check browser console (Network tab).`);
                             }
-                            displayGlobalMessage(detailedErrorMsg, "error", 10000);
+                            displayGlobalMessage(detailedErrorMsg, "error", 12000);
                             if (isManualRefreshOrCategoryChange) { prelimsTopics.value = []; } 
                         } finally {
                             isFetchingCards.value = false;
@@ -1306,170 +1314,245 @@
                         };
                         renderChart(dashboardChartCanvasEl, dashboardChartInstance, 'doughnut', dashboardChartData.value, options, 'dashboard');
                     };
+
+                    // --- Start of added/completed chart rendering functions ---
                     const renderAnalyticsSubjectChart = () => {
-                        const data = { labels: dashboardChartData.value.labels, datasets: [{...dashboardChartData.value.datasets[0], label: 'Topics in Dashboard'}]};
-                        const options = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: {boxWidth:12, font: {size: 11}} }, title: {display: false}, tooltip: { callbacks: { label: function(context) { let label = context.label || ''; if (label) { label += ': '; } const value = context.raw; const total = context.chart.getDatasetMeta(0).total; const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%'; return `${label}${value} (${percentage})`; } } } }};
-                        renderChart(analyticsSubjectChartEl, analyticsSubjectChartInstance, 'pie', data, options, 'subject');
+                        // Using dashboardChartData but rendering as a bar chart for variety in analytics
+                        const options = {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            indexAxis: 'y', // Horizontal bar chart
+                            scales: {
+                                x: { beginAtZero: true, ticks: { precision: 0 } },
+                                y: { grid: { display: false } }
+                            },
+                            plugins: {
+                                legend: { display: false },
+                                title: { display: false },
+                                tooltip: {
+                                    backgroundColor: 'rgba(0,0,0,0.75)', titleFont: { size: 13 }, bodyFont: { size: 11 }, padding: 8, cornerRadius: 3
+                                }
+                            }
+                        };
+                        renderChart(analyticsSubjectChartEl, analyticsSubjectChartInstance, 'bar', dashboardChartData.value, options, 'subject');
                     };
-                    const renderAnalyticsProgressChart = () => { 
-                        const data = subjectCoverageData.value;
-                        const options = { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, max: 100, ticks: { precision: 0, callback: function(value) { return value + "%" } } }, y: { ticks: { font: {size: 10} } } }, plugins: { legend: { display: false }, title: { display: false }, tooltip: { callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.x !== null) { label += context.parsed.x.toFixed(1) + '%'; } return label; } } } } };
-                        renderChart(analyticsProgressChartEl, analyticsProgressChartInstance, 'bar', data, options, 'progress');
+
+                    const renderAnalyticsProgressChart = () => {
+                        const options = {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: { beginAtZero: true, max: 100, ticks: { callback: value => value + '%' } },
+                                x: { grid: { display: false } }
+                            },
+                            plugins: {
+                                legend: { display: false },
+                                title: { display: false },
+                                tooltip: {
+                                    callbacks: { label: context => `${context.dataset.label}: ${context.formattedValue}%` },
+                                    backgroundColor: 'rgba(0,0,0,0.75)', titleFont: { size: 13 }, bodyFont: { size: 11 }, padding: 8, cornerRadius: 3
+                                }
+                            }
+                        };
+                        renderChart(analyticsProgressChartEl, analyticsProgressChartInstance, 'bar', subjectCoverageData.value, options, 'progress');
                     };
+                    
                     const renderAnalyticsQuestionYearChart = () => {
                         const yearCounts = {};
-                        uploadedQuestions.value.forEach(q => { yearCounts[q.year] = (yearCounts[q.year] || 0) + 1; });
-                        const sortedYears = Object.keys(yearCounts).sort((a,b) => parseInt(a)-parseInt(b));
-                        const data = { labels: sortedYears, datasets: [{ label: 'PYQs by Year', data: sortedYears.map(year => yearCounts[year]), backgroundColor: chartColors.slice(0, sortedYears.length), borderColor: chartBorderColors.slice(0, sortedYears.length), borderWidth: 1, borderRadius: 4 }] };
-                        const options = { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } };
+                        uploadedQuestions.value.forEach(q => {
+                            const year = q.year || 'Unknown';
+                            yearCounts[year] = (yearCounts[year] || 0) + 1;
+                        });
+                        const labels = Object.keys(yearCounts).sort((a,b) => (a === 'Unknown' ? 1 : b === 'Unknown' ? -1 : Number(a) - Number(b))); // Sort years, push 'Unknown' to end
+                        const dataValues = labels.map(label => yearCounts[label]);
+                        const backgroundColors = labels.map((_, index) => chartColors[index % chartColors.length]);
+                        const borderColors = labels.map((_, index) => chartBorderColors[index % chartBorderColors.length]);
+
+                        const data = {
+                            labels,
+                            datasets: [{
+                                label: 'PYQs by Year',
+                                data: dataValues,
+                                backgroundColor: backgroundColors,
+                                borderColor: borderColors,
+                                borderWidth: 1,
+                                borderRadius: 4,
+                            }]
+                        };
+                        const options = {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: { beginAtZero: true, ticks: { precision: 0 } },
+                                x: { grid: { display: false } }
+                            },
+                            plugins: {
+                                legend: { display: false },
+                                title: { display: false },
+                                tooltip: {
+                                    backgroundColor: 'rgba(0,0,0,0.75)', titleFont: { size: 13 }, bodyFont: { size: 11 }, padding: 8, cornerRadius: 3
+                                }
+                            }
+                        };
                         renderChart(analyticsQuestionYearChartEl, analyticsQuestionYearChartInstance, 'bar', data, options, 'pyqYear');
                     };
+
                     const renderMindmapAnalytics = () => {
-                        if (currentView.value !== 'analytics') return; 
-                        
+                        chartErrorMessage.value.mindmap = '';
+                        if (typeof markmap === 'undefined' || typeof markmap.Markmap === 'undefined') {
+                            chartErrorMessage.value.mindmap = 'Mindmap library (Markmap) not loaded.';
+                            console.error('Mindmap library (Markmap) not loaded.'); return;
+                        }
                         const svgEl = mindmapAnalyticsEl.value;
                         if (!svgEl) {
-                            console.warn("Mindmap SVG element not found in DOM for analytics.");
-                            chartErrorMessage.value.mindmap = 'Mindmap container element not found.';
-                            return;
+                             chartErrorMessage.value.mindmap = 'Mindmap SVG element not found. Check ref name.';
+                            console.error('Mindmap SVG element not found.'); return;
                         }
-
-                        if (typeof window.markmap === 'undefined' || typeof window.markmap.Transformer === 'undefined' || typeof window.markmap.Markmap === 'undefined') {
-                            console.error('Markmap libraries not loaded.'); 
-                            chartErrorMessage.value.mindmap = 'Mindmap library not loaded. Please refresh the page.';
-                            svgEl.innerHTML = ''; // Clear if lib not loaded
-                            return;
+                         if (!svgEl.isConnected) {
+                            console.warn('Mindmap SVG for analytics is not connected to the DOM. Aborting render.');
+                            chartErrorMessage.value.mindmap = 'Mindmap SVG not ready (not connected to DOM).'; return;
                         }
-                        
-                        chartErrorMessage.value.mindmap = ''; 
 
                         if (dashboardTopics.value.length === 0) {
-                            console.log("No dashboard topics to render in mindmap.");
-                            svgEl.innerHTML = ''; // Clear if no data
-                            if (mindmapInstance.value) { // If an old instance exists
-                               // Markmap doesn't have a formal destroy, but nullify ref
-                               mindmapInstance.value = null;
+                            if (mindmapInstance.value) { // Clear previous mindmap if exists
+                                mindmapInstance.value.setData(); // Clears the mindmap
                             }
-                            return; // Don't attempt to render if no topics
-                        }
-
-                        if (!svgEl.isConnected) {
-                            console.warn("Mindmap SVG element is not connected to the DOM during render attempt.");
-                            chartErrorMessage.value.mindmap = 'Mindmap container not ready in DOM.';
-                            return;
+                            console.log("No dashboard topics to render mindmap."); return;
                         }
                         
                         try {
-                            // Clear the SVG content directly and nullify old instance
-                            svgEl.innerHTML = ''; 
-                            mindmapInstance.value = null; 
-
-                            const transformer = new window.markmap.Transformer();
+                            const { Transformer } = markmap;
+                            const transformer = new Transformer();
                             const { root, features } = transformer.transform(computedMindmapMarkdown.value);
                             
-                            const markmapOptions = { 
-                                autoFit: true, // Changed to true
-                                colorFreezeLevel: 2, 
-                                duration: 500, 
-                                initialExpandLevel: 2,
-                                zoom: true, // Enable zoom
-                                pan: true,  // Enable pan
-                            };
-                            mindmapInstance.value = window.markmap.Markmap.create(svgEl, markmapOptions, root);
+                            if (mindmapInstance.value) {
+                                mindmapInstance.value.setData(root);
+                                mindmapInstance.value.fit();
+                            } else {
+                                mindmapInstance.value = markmap.Markmap.create(svgEl, null, root);
+                            }
                         } catch (e) {
-                            console.error("Error rendering mindmap:", e); 
-                            chartErrorMessage.value.mindmap = `Failed to render mindmap: ${e.message}. Check console.`;
-                            svgEl.innerHTML = `<text x="10" y="30" font-family="Inter, sans-serif" font-size="14" fill="red">Error: Could not render mindmap. ${e.message}</text>`;
+                            console.error("Error rendering mindmap:", e);
+                            chartErrorMessage.value.mindmap = `Failed to render mindmap. ${e.message}`;
+                            if (mindmapInstance.value) mindmapInstance.value.setData(); // Clear on error
                         }
                     };
 
-                    const handleScroll = () => { 
-                        if (currentView.value !== 'main' || isFetchingCards.value ) return; 
-                        const nearBottom = (window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight - 300; 
-                        if (nearBottom) {
-                            loadMainViewCards(false); 
+                    // Infinite scroll handler
+                    const handleScroll = () => {
+                        if (currentView.value !== 'main' || isFetchingCards.value || showScrollLoader.value) return;
+                        const bottomOfWindow = (window.innerHeight + window.scrollY) >= (document.documentElement.offsetHeight - 300); // 300px threshold
+                        if (bottomOfWindow) {
+                            loadMainViewCards(false); // false indicates it's not a manual refresh, so append cards
                         }
                     };
-                    
+
+                    // Lifecycle Hooks
                     Vue.onMounted(() => {
-                        loadDashboard(); loadReadLater(); loadMainViewCards(true); handleLoadPYQs(); 
-                        window.addEventListener('scroll', handleScroll); 
-                        if (currentView.value === 'dashboard') { Vue.nextTick(renderDashboardChart);
+                        loadDashboard();
+                        loadReadLater();
+                        loadMainViewCards(true); // Initial load of cards for main view
+                        handleLoadPYQs(); // Load initial PYQs for analytics (if needed on mount)
+                        
+                        window.addEventListener('scroll', handleScroll);
+
+                        // Initial chart rendering if starting on a specific view (e.g. due to page refresh/bookmark)
+                        // This is mostly handled by watchers now, but good for direct load.
+                        if (currentView.value === 'dashboard') {
+                            Vue.nextTick(renderDashboardChart);
                         } else if (currentView.value === 'analytics') {
-                             Vue.nextTick(() => { renderAnalyticsSubjectChart(); renderAnalyticsProgressChart(); renderAnalyticsQuestionYearChart(); renderMindmapAnalytics(); });
+                             Vue.nextTick(() => {
+                                renderAnalyticsSubjectChart();
+                                renderAnalyticsProgressChart();
+                                renderAnalyticsQuestionYearChart();
+                                renderMindmapAnalytics();
+                            });
                         }
                     });
-                    Vue.onUnmounted(() => {
+
+                    Vue.onBeforeUnmount(() => {
                         window.removeEventListener('scroll', handleScroll);
-                        // if (prelimsSocket.value && prelimsSocket.value.readyState === WebSocket.OPEN) prelimsSocket.value.close(); // WebSocket removed
-                        if(dashboardChartInstance.value) dashboardChartInstance.value.destroy();
-                        if(analyticsSubjectChartInstance.value) analyticsSubjectChartInstance.value.destroy();
-                        if(analyticsProgressChartInstance.value) analyticsProgressChartInstance.value.destroy();
-                        if(analyticsQuestionYearChartInstance.value) analyticsQuestionYearChartInstance.value.destroy();
-                        mindmapInstance.value = null; 
+                        if (window.globalMessageTimeout) clearTimeout(window.globalMessageTimeout);
+                        // Destroy chart instances
+                        if (dashboardChartInstance.value) dashboardChartInstance.value.destroy();
+                        if (analyticsSubjectChartInstance.value) analyticsSubjectChartInstance.value.destroy();
+                        if (analyticsProgressChartInstance.value) analyticsProgressChartInstance.value.destroy();
+                        if (analyticsQuestionYearChartInstance.value) analyticsQuestionYearChartInstance.value.destroy();
+                        // Markmap doesn't have a standard destroy, but clearing data helps
+                        if (mindmapInstance.value) mindmapInstance.value.setData();
                     });
-                    Vue.watch(selectedCard, (newCard) => {
-                        if (newCard && currentView.value === 'detail') { loadInitialPYQs(); 
-                        } else { selectedCardPYQs.value = []; pyqError.value = ''; noMorePYQs.value = false; pyqOffset.value = 0;}
+
+                    // Watchers
+                    Vue.watch(currentView, (newView) => {
+                        if (newView === 'dashboard') {
+                            Vue.nextTick(renderDashboardChart);
+                        } else if (newView === 'analytics') {
+                            Vue.nextTick(() => {
+                                renderAnalyticsSubjectChart();
+                                renderAnalyticsProgressChart();
+                                renderAnalyticsQuestionYearChart();
+                                renderMindmapAnalytics();
+                            });
+                        } else if (newView === 'detail') {
+                             // PYQ reset and loading is handled in viewCardDetail now
+                        }
                     });
                     
-                    Vue.watch(
-                        [dashboardTopics, currentView], 
-                        () => {
-                            if (currentView.value === 'analytics') {
-                                Vue.nextTick(() => {
-                                    renderAnalyticsSubjectChart();
-                                    renderAnalyticsProgressChart();
-                                    renderAnalyticsQuestionYearChart(); 
-                                    renderMindmapAnalytics(); 
-                                });
-                            }
-                            if (currentView.value === 'dashboard') {
-                                Vue.nextTick(renderDashboardChart);
-                            }
-                        },
-                        { deep: true } 
-                    );
-
-                    Vue.watch(currentView, (newViewVal) => { 
-                        if (newViewVal === 'analytics') {
-                            Vue.nextTick(() => { 
-                                renderAnalyticsSubjectChart(); 
-                                renderAnalyticsProgressChart(); 
-                                renderAnalyticsQuestionYearChart(); 
-                                renderMindmapAnalytics(); 
-                            });
-                        } else if (newViewVal === 'dashboard') {
-                            Vue.nextTick(renderDashboardChart);
+                    Vue.watch(dashboardTopics, () => {
+                        // Re-render dashboard chart when topics change
+                        if (currentView.value === 'dashboard') {
+                           Vue.nextTick(renderDashboardChart);
                         }
-                        if (newViewVal !== 'detail') { 
-                            selectedCardPYQs.value = []; 
-                            pyqError.value = ''; 
-                            noMorePYQs.value = false; 
-                            pyqOffset.value = 0; 
+                        // Re-render analytics charts that depend on dashboardTopics
+                        if (currentView.value === 'analytics') {
+                            Vue.nextTick(() => {
+                                renderAnalyticsSubjectChart(); 
+                                renderMindmapAnalytics(); // Mindmap depends on dashboard topics
+                            });
+                        }
+                    }, { deep: true });
+
+                     Vue.watch(prelimsTopics, () => {
+                        if (currentView.value === 'analytics') {
+                           Vue.nextTick(renderAnalyticsProgressChart); // Progress chart depends on prelimsTopics
+                        }
+                    }, { deep: true });
+
+                    Vue.watch(uploadedQuestions, () => {
+                        if (currentView.value === 'analytics') {
+                           Vue.nextTick(renderAnalyticsQuestionYearChart); // PYQ year chart depends on uploadedQuestions
+                        }
+                    }, { deep: true });
+                    
+                    Vue.watch(computedMindmapMarkdown, () => {
+                        if (currentView.value === 'analytics') {
+                            Vue.nextTick(renderMindmapAnalytics);
                         }
                     });
 
-                    return { 
-                        currentView, selectedCard, prelimsTopics, selectedPrelimsSubject, uploadedQuestions, readLaterTopics,
-                        questionPrompt, generatedQuestion, isGeneratingQuestion,
-                        isFetchingCards, dashboardTopics, globalMessage, globalMessageType, 
-                        showModal, modalTitle, modalMessage, modalType, 
+                    // --- End of added/completed functions ---
+
+                    return {
+                        currentView, selectedCard, prelimsTopics, dashboardTopics, uploadedQuestions, readLaterTopics,
+                        selectedPrelimsSubject, isFetchingCards, showScrollLoader,
+                        globalMessage, globalMessageType, displayGlobalMessage,
+                        showModal, modalTitle, modalMessage, modalType, openModal, closeModal,
                         showActionModal, actionModalTitle, actionModalMessage, actionModalType, actionModalButtonText,
-                        chartErrorMessage, showScrollLoader, 
-                        filteredPrelimsTopics, studyStats, subjectCoverageData,
-                        openModal, closeModal, openModalWithAction, closeActionModal, confirmActionModal,
-                        isAlreadyInDashboard, goToMain, goToDashboard, goToAnalytics, viewCardDetail,
-                        addToDashboard, removeFromDashboard, clearDashboard, 
-                        addToReadLater, isAlreadyInReadLater, 
-                        loadMainViewCards, initiateRefresh, 
-                        handleLoadPYQs, generateQuestion,
-                        formattedContent, getLinkDomain, formatNewsDate, 
-                        getSubjectColor, getCardCategoryTagStyles, getCardBackgroundGradient, 
-                        filterCategories, selectCategoryFilter,
-                        dashboardChartCanvasEl, analyticsSubjectChartEl, analyticsProgressChartEl, analyticsQuestionYearChartEl,
-                        mindmapAnalyticsEl, 
-                        selectedCardPYQs, isFetchingPYQs, pyqError, loadInitialPYQs, loadMorePYQs, selectPYQAnswer, revealPYQAnswer, noMorePYQs, detailViewContainer
+                        openModalWithAction, closeActionModal, confirmActionModal,
+                        questionPrompt, generatedQuestion, isGeneratingQuestion, generateQuestion,
+                        selectedCardPYQs, isFetchingPYQs, pyqError, pyqOffset, pyqBatchSize, noMorePYQs,
+                        loadInitialPYQs, loadMorePYQs, selectPYQAnswer, revealPYQAnswer, detailViewContainer,
+                        dashboardChartCanvasEl, analyticsSubjectChartEl, analyticsProgressChartEl, analyticsQuestionYearChartEl, mindmapAnalyticsEl,
+                        chartErrorMessage, filterCategories, studyStats, subjectCoverageData, dashboardChartData,
+                        goToMain, goToDashboard, goToAnalytics, viewCardDetail,
+                        formattedContent, getLinkDomain, formatNewsDate,
+                        getSubjectColor, getCardCategoryTagStyles, getCardBackgroundGradient,
+                        selectCategoryFilter, loadMainViewCards, initiateRefresh,
+                        addToDashboard, removeFromDashboard, clearDashboard, isAlreadyInDashboard,
+                        addToReadLater, isAlreadyInReadLater,
+                        handleLoadPYQs, filteredPrelimsTopics,
+                        // Expose chart rendering functions if needed for direct calls, though watchers handle most cases
+                        renderDashboardChart, renderAnalyticsSubjectChart, renderAnalyticsProgressChart, renderAnalyticsQuestionYearChart, renderMindmapAnalytics
                     };
                 }
             });
