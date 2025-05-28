@@ -1,10 +1,10 @@
-# UPSC Prep Hub (UI Branded as "fuelprep")
+# fuelprep
 
-##  Overview
+## 🚀 Overview
 
-UPSC Prep Hub is an AI-powered web application designed to assist UPSC (Union Public Service Commission) aspirants in their preliminary examination preparation. It leverages generative AI models (Google Gemini and potentially Perplexity for underlying research) to dynamically create distinct study cards across various syllabus categories, providing a continuous and varied learning experience. The application also includes features for saving important topics, practicing with AI-generated questions, and analyzing study progress.
+**fuelprep** is an AI-powered web application designed to assist UPSC (Union Public Service Commission) aspirants in their preliminary examination preparation. It leverages generative AI models (Google Gemini and potentially Perplexity for underlying research) to dynamically create distinct study cards across various syllabus categories, providing a continuous and varied learning experience. The application also includes features for saving important topics, practicing with AI-generated questions, and analyzing study progress.
 
-##  Key Features
+## ✨ Key Features
 
 * **AI-Generated Study Cards:** Dynamically generates study cards on distinct subtopics for all UPSC Prelims subjects.
     * **Continuous Scroll:** New cards are fetched as the user scrolls, providing an endless stream of information.
@@ -44,7 +44,7 @@ UPSC Prep Hub is an AI-powered web application designed to assist UPSC (Union Pu
 * **Styling:** Tailwind CSS
 * **Charting:** Chart.js
 * **Mindmapping:** Markmap.js
-* **Interactivity (Minor):** Alpine.js (for dropdowns, if re-enabled)
+* **Interactivity (Minor):** Alpine.js (if enabled for dropdowns)
 
 **Data Storage (Frontend):**
 * Browser LocalStorage: For persisting Dashboard topics and Read Later items.
