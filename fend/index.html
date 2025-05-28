@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPSC Prep Hub - Prelims Focused</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markmap-lib@0.15.0/dist/browser.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markmap-view@0.15.0/dist/index.min.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overscroll-behavior-y: contain; 
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f0f4f8; /* Light gray-blue */
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #a0aec0; /* Medium gray */
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #718096; /* Darker gray */
+        }
+        .prose p {
+            margin-bottom: 1em;
+        }
+        .prose h3 {
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+        }
+        .loading-spinner, .card-refresh-spinner {
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            width: 24px; /* Default size */
+            height: 24px; /* Default size */
+            border-radius: 50%;
+            border-left-color: #4f46e5; /* Indigo */
+            animation: spin 1s ease infinite;
+        }
+        .card-refresh-spinner { /* Smaller spinner for card buttons */
+            width: 16px;
+            height: 16px;
+            border-width: 2px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 1rem;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%; 
+            text-align: center;
+        }
+         .modal-content h3 { 
+            font-size: 1.25rem; 
+            font-weight: 600; 
+            margin-bottom: 1rem; 
+        }
+        .modal-content p { 
+            color: #4b5563; 
+            margin-bottom: 1.5rem; 
+            line-height: 1.6;
+        }
+        .modal-button { 
+            padding: 0.6rem 1.2rem; 
+            border-radius: 0.375rem; 
+            font-weight: 500; 
+            transition: background-color 0.2s;
+            min-width: 100px; 
+        }
+        .modal-button-primary { 
+            background-color: #4f46e5; 
+            color: white;
+        }
+        .modal-button-primary:hover {
+            background-color: #4338ca; 
+        }
+        .modal-button-danger {
+            background-color: #e53e3e; 
+            color: white;
+        }
+        .modal-button-danger:hover {
+            background-color: #c53030; 
+        }
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 400px; 
+            width: 100%;  
+            max-width: 800px; 
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.3s ease;
+        }
+        .fade-enter-from, .fade-leave-to {
+            opacity: 0;
+        }
+        .slide-enter-active, .slide-leave-active {
+            transition: all 0.3s ease;
+        }
+        .slide-enter-from, .slide-leave-to {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        .card-action-buttons button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem; 
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 120px; 
+        }
+        .stat-number {
+            font-size: 2.25rem; 
+            font-weight: bold;
+            margin-bottom: 0.25rem; 
+        }
+        .stat-label {
+            font-size: 0.85rem; 
+            opacity: 0.9;
+        }
+        .chart-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08); 
+            border: 1px solid #e5e7eb; 
+        }
+        .main-card-overlay::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-color: rgba(0,0,0,0.2); 
+            border-radius: inherit; 
+            z-index: 5; 
+        }
+        
+        .scroll-loader-dot {
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+        .scroll-loader-dot:nth-child(1) { animation-delay: -0.32s; }
+        .scroll-loader-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes pulse {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+        
+        .category-circle {
+            width: 10px; 
+            height: 10px; 
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px; 
+            flex-shrink: 0; 
+        }
+        
+        .category-all { background-color: #6B7280; } 
+        .category-current-events { background-color: #EF4444; }  
+        .category-history { background-color: #8B5CF6; }          
+        .category-geography { background-color: #10B981; }          
+        .category-polity { background-color: #3B82F6; }          
+        .category-economy { background-color: #F59E0B; }          
+        .category-environment { background-color: #059669; }         
+        .category-science { background-color: #6366F1; }         
+
+        .prose .text-indigo-600 { color: #4f46e5 !important; }
+        .prose .hover\:text-indigo-800:hover { color: #3730a3 !important; }
+
+        /* Styles for Markmap SVG */
+        .markmap-svg-container {
+            width: 100%;
+            height: 500px; /* Default height, can be adjusted */
+            background-color: white;
+            border-radius: 0.75rem; /* 12px */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb; /* Tailwind gray-200 */
+            overflow: auto; /* Allows panning if content overflows */
+        }
+        .markmap-svg-container svg {
+            display: block; /* Remove extra space below SVG */
+            width: 100%;
+            height: 100%;
+        }
+        [x-cloak] { display: none !important; }
+
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-sky-100">
+    <div id="app" class="min-h-screen p-2 sm:p-4 font-inter text-gray-800 flex flex-col">
+        <header class="py-6 sm:py-8 bg-white shadow-xl rounded-xl mb-6 sm:mb-8 flex flex-col items-center px-4 sm:px-6">
+            <button @click="goToMain" class="flex items-center justify-center w-full mb-4 focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600 mr-3"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                <h1 class="text-3xl sm:text-4xl font-bold text-indigo-700">fuelprep</h1>
+            </button>
+            <nav class="flex justify-center space-x-2 sm:space-x-4 w-full">
+                <button @click="goToDashboard" 
+                        :class="{'bg-purple-600 text-white': currentView === 'dashboard', 'bg-purple-100 text-purple-700 hover:bg-purple-200': currentView !== 'dashboard'}" 
+                        class="px-3 py-2 sm:px-4 sm:py-2 rounded-lg shadow-md transition-colors font-medium flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5 sm:mr-2 hidden sm:inline" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
+                        <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
+                    </svg>
+                    Dashboard
+                    <span class="ml-2 bg-purple-200 text-purple-800 text-xs font-semibold px-1.5 py-0.5 rounded-full">{{ dashboardTopics.length }}</span>
+                </button>
+                 <button @click="goToAnalytics" 
+                         :class="{'bg-emerald-600 text-white': currentView === 'analytics', 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200': currentView !== 'analytics'}" 
+                         class="px-3 py-2 sm:px-4 sm:py-2 rounded-lg shadow-md transition-colors font-medium flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5 sm:mr-2 hidden sm:inline" viewBox="0 0 20 20" fill="currentColor">
+                         <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                    Analytics
+                </button>
+            </nav>
+        </header>
+
+        <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
+            <div class="modal-content" @click.stop>
+                <h3 :class="modalType === 'error' ? 'text-red-600' : modalType === 'success' ? 'text-green-600' : 'text-blue-600'">
+                    {{ modalTitle }}
+                </h3>
+                <p>{{ modalMessage }}</p>
+                <button @click="closeModal" class="modal-button modal-button-primary mt-4">
+                    OK
+                </button>
+            </div>
+        </div>
+
+        <div v-if="showActionModal" class="modal-overlay" @click.self="closeActionModal">
+            <div class="modal-content" @click.stop>
+                <h3 :class="actionModalType === 'error' ? 'text-red-500' : actionModalType === 'warning' ? 'text-yellow-500' : actionModalType === 'success' ? 'text-green-500' : 'text-blue-500'">
+                    {{ actionModalTitle }}
+                </h3>
+                <p>{{ actionModalMessage }}</p>
+                <div class="mt-6 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
+                    <button @click="closeActionModal" class="modal-button bg-gray-200 text-gray-700 hover:bg-gray-300 order-2 sm:order-1">
+                        Cancel
+                    </button>
+                    <button @click="confirmActionModal" 
+                            :class="['modal-button order-1 sm:order-2', 
+                                     actionModalType === 'error' || actionModalType === 'warning' ? 'modal-button-danger' : 'modal-button-primary']">
+                        {{ actionModalButtonText }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <transition name="fade">
+            <div v-if="globalMessage" :class="globalMessageType === 'error' ? 'bg-red-100 border-red-500 text-red-700' : 'bg-blue-100 border-blue-500 text-blue-700'" class="max-w-7xl mx-auto w-full p-4 rounded-lg shadow-md mb-6 border-l-4" role="alert">
+                <p class="font-bold">{{ globalMessageType === 'error' ? 'Error' : 'Info' }}</p>
+                <p v-html="globalMessage.replace(/\n/g, '<br>')"></p> 
+            </div>
+        </transition>
+        
+        <main v-if="currentView === 'main'" class="grid grid-cols-1 gap-6 sm:gap-8 max-w-7xl mx-auto w-full flex-grow">
+            <section class="bg-white p-4 sm:p-6 rounded-xl shadow-xl col-span-full">
+                <h2 class="text-xl sm:text-2xl font-semibold text-indigo-600 mb-4 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open-check mr-2"><path d="M8 3H2v15h7c1.7 0 3 1.3 3 3V7c0-2.2-1.8-4-4-4Z"/><path d="m16 12 2 2 4-4"/><path d="M22 6V3h-6c-2.2 0-4 1.8-4 4v14c0-1.7 1.3-3 3-3h7v-2.3"/></svg>
+                    Prelims Study Cards
+                </h2>
+                 <div class="flex flex-col sm:flex-row items-start sm:items-end gap-4 mb-6"> 
+                    <div class="flex-grow w-full">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Category:</label>
+                        <div class="flex flex-wrap gap-2">
+                            <button
+                                v-for="category in filterCategories"
+                                :key="category.value"
+                                @click="selectCategoryFilter(category.value)"
+                                :class="[
+                                    'px-3 py-1 rounded-full font-medium transition-colors flex items-center text-xs sm:text-sm shadow-sm', 
+                                    selectedPrelimsSubject === category.value 
+                                        ? 'bg-indigo-600 text-white' 
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                ]"
+                            >
+                                <span :class="[
+                                    'category-circle',
+                                    `category-${category.name.toLowerCase().replace(/\s+/g, '-').replace(/[()&]/g, '')}`
+                                ]"></span>
+                                <span class="truncate">{{ category.name }}</span>
+                            </button>
+                        </div>
+                    </div>
+                    <button @click="loadMainViewCards(true)" :disabled="isFetchingCards && !showScrollLoader" class="w-full sm:w-auto mt-4 sm:mt-0 self-stretch sm:self-end whitespace-nowrap bg-green-500 hover:bg-green-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center">
+                        <svg v-if="!isFetchingCards || showScrollLoader" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                        <div v-if="isFetchingCards && !showScrollLoader" class="loading-spinner !w-5 !h-5 !border-2 !border-l-white mr-2"></div>
+                        {{ (isFetchingCards && !showScrollLoader) ? 'Refreshing...' : 'Refresh Cards' }}
+                    </button>
+                </div>
+
+                <transition name="fade">
+                    <div v-if="isFetchingCards && prelimsTopics.length === 0 && !showScrollLoader" class="text-center py-10 text-gray-500">
+                        <div class="loading-spinner mx-auto mb-3"></div>
+                        <p>Loading new study cards from AI backend...</p>
+                        <p class="text-xs mt-1">This may take a few moments.</p>
+                    </div>
+                </transition>
+                <div v-if="!isFetchingCards && prelimsTopics.length === 0 && !globalMessage" class="text-center py-10 text-gray-500">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-3 text-gray-400"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 10 1.5 1.5L12 10l1.5 1.5L15 10"/><path d="M9 14h.01"/><path d="M15 14h.01"/><path d="M12 14h.01"/></svg>
+                    <p>No prelims topics found. Try refreshing or selecting a different category.</p>
+                </div>
+                <transition-group name="slide" tag="div" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <div v-for="(topic) in filteredPrelimsTopics" :key="topic.id"
+                         @click="viewCardDetail(topic)"
+                         class="relative rounded-xl shadow-lg overflow-hidden h-48 sm:h-56 flex flex-col justify-between p-4 group cursor-pointer main-card-overlay transition-all duration-300 ease-in-out transform hover:scale-105"
+                         :style="{ background: getCardBackgroundGradient(topic) }"> 
+                        
+                        <div class="relative z-10 flex flex-col h-full">
+                            <div class="mb-auto"> 
+                                <span :class="['inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold tracking-wide', getCardCategoryTagStyles(topic.subject).tagBg, getCardCategoryTagStyles(topic.subject).tagText]">
+                                    <svg :class="['mr-1.5 h-2.5 w-2.5', getCardCategoryTagStyles(topic.subject).circleFill]" fill="currentColor" viewBox="0 0 8 8">
+                                        <circle cx="4" cy="4" r="3" />
+                                    </svg>
+                                    {{ topic.subject }}
+                                </span>
+                            </div>
+
+                            <div class="mt-auto"> 
+                                <h3 class="text-lg sm:text-xl font-bold text-white leading-tight"> 
+                                    {{ topic.title }}
+                                </h3>
+                            </div>
+                        </div>
+
+                        <div class="card-action-buttons absolute bottom-0 left-0 right-0 h-0 group-hover:h-[25%] bg-black/60 backdrop-blur-sm flex items-center justify-around p-1 opacity-0 group-hover:opacity-100 transform translate-y-full group-hover:translate-y-0 transition-all duration-300 ease-in-out z-20">
+                            <button @click.stop="initiateRefresh(topic, 'content')" :disabled="topic.isRefreshing && topic.activeRefreshType === 'content'" title="Refresh Content" class="p-1.5 bg-white rounded-full text-gray-700 hover:text-indigo-600 shadow-md hover:shadow-lg transition-all duration-200">
+                                <div v-if="topic.isRefreshing && topic.activeRefreshType === 'content'" class="card-refresh-spinner !w-3 !h-3 !border-l-indigo-500"></div>
+                                <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2a8.001 8.001 0 0015.357 2.001M9 15h4.581"></path></svg>
+                            </button>
+                            <button @click.stop="initiateRefresh(topic, 'topic')" :disabled="topic.isRefreshing && topic.activeRefreshType === 'topic'" title="New Topic" class="p-1.5 bg-white rounded-full text-gray-700 hover:text-indigo-600 shadow-md hover:shadow-lg transition-all duration-200">
+                                <div v-if="topic.isRefreshing && topic.activeRefreshType === 'topic'" class="card-refresh-spinner !w-3 !h-3 !border-l-indigo-500"></div>
+                                <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a4 4 0 000-8h-1m-4 4H9M9 8h4m-4 4h2m6-4h2m-2 4h2m0 0a2 2 0 012 2v3a2 2 0 01-2 2h-4a2 2 0 01-2-2v-3a2 2 0 012-2z"></path></svg>
+                            </button>
+                             <button @click.stop="initiateRefresh(topic, 'related')" :disabled="topic.isRefreshing && topic.activeRefreshType === 'related'" title="Refresh Related" class="p-1.5 bg-white rounded-full text-gray-700 hover:text-indigo-600 shadow-md hover:shadow-lg transition-all duration-200">
+                                <div v-if="topic.isRefreshing && topic.activeRefreshType === 'related'" class="card-refresh-spinner !w-3 !h-3 !border-l-indigo-500"></div>
+                               <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                            </button>
+                            <button @click.stop="addToReadLater(topic)" :disabled="isAlreadyInReadLater(topic.id) || (topic.isRefreshing && topic.activeRefreshType === 'readLater')" :title="isAlreadyInReadLater(topic.id) ? 'Added to Read Later' : 'Add to Read Later'" class="p-1.5 bg-white rounded-full text-gray-700 hover:text-indigo-600 shadow-md hover:shadow-lg transition-all duration-200">
+                                <div v-if="topic.isRefreshing && topic.activeRefreshType === 'readLater'" class="card-refresh-spinner !w-3 !h-3 !border-l-indigo-500"></div>
+                                <svg v-else-if="isAlreadyInReadLater(topic.id)" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                                <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                </transition-group>
+                <div v-if="showScrollLoader" class="col-span-full flex justify-center items-center py-8">
+                    <div class="flex space-x-2">
+                        <div class="w-3 h-3 bg-indigo-600 rounded-full scroll-loader-dot"></div>
+                        <div class="w-3 h-3 bg-indigo-600 rounded-full scroll-loader-dot"></div>
+                        <div class="w-3 h-3 bg-indigo-600 rounded-full scroll-loader-dot"></div>
+                    </div>
+                    <p class="ml-3 text-sm text-gray-600">Loading more cards...</p>
+                </div>
+            </section>
+        </main>
+
+        <main v-if="currentView === 'dashboard'" class="max-w-7xl mx-auto w-full flex-grow p-2 sm:p-4">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                <h2 class="text-2xl sm:text-3xl font-semibold text-purple-700">My Dashboard</h2>
+                <button v-if="dashboardTopics.length > 0" @click="clearDashboard" class="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-colors">
+                    Clear All ({{ dashboardTopics.length }})
+                </button>
+            </div>
+
+            <div v-if="chartErrorMessage.dashboard" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md shadow" role="alert">
+                <p class="font-bold">Dashboard Chart Error</p>
+                <p>{{ chartErrorMessage.dashboard }}</p>
+            </div>
+            <div v-if="dashboardTopics.length > 0 && !chartErrorMessage.dashboard" class="chart-card mb-8">
+                 <h3 class="text-xl font-semibold text-gray-700 mb-4 text-center">Topics in Dashboard by Subject</h3>
+                <div class="chart-container !h-[380px] sm:!h-[420px]"><canvas ref="dashboardChartCanvasEl"></canvas></div>
+            </div>
+            <div v-if="dashboardTopics.length === 0" class="text-center py-10 text-gray-500 bg-white p-6 rounded-xl shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-3 text-gray-400"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><path d="M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path><path d="M12 22v-2"></path></svg>
+                <p class="text-xl">Your dashboard is empty.</p>
+                <p>Add cards from the main view to see them here and track your progress.</p>
+            </div>
+
+            <transition-group name="slide" tag="div" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div v-for="(topic) in dashboardTopics" :key="topic.id"
+                     class="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col p-4 group relative border border-gray-200 hover:shadow-xl transition-shadow">
+                    <div class="flex justify-between items-start mb-2">
+                         <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold', getCardCategoryTagStyles(topic.subject).tagBg, getCardCategoryTagStyles(topic.subject).tagText]">
+                            <svg :class="['mr-1 h-2 w-2', getCardCategoryTagStyles(topic.subject).circleFill]" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" /></svg>
+                            {{ topic.subject }}
+                        </span>
+                        <button @click="removeFromDashboard(topic.id)" title="Remove from Dashboard" class="text-red-400 hover:text-red-600 p-1 rounded-full hover:bg-red-50 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+                    <h3 class="text-md font-semibold text-gray-800 mb-1 group-hover:text-indigo-600 transition-colors cursor-pointer" @click="viewCardDetail(topic)">
+                        {{ topic.title }}
+                    </h3>
+                    <p class="text-xs text-gray-600 mb-3 flex-grow line-clamp-3">{{ topic.summary }}</p>
+                    <button @click="viewCardDetail(topic)" class="mt-auto text-sm text-indigo-600 hover:text-indigo-800 font-medium self-start py-1">
+                        View Details &rarr;
+                    </button>
+                </div>
+            </transition-group>
+        </main>
+
+        <main v-if="currentView === 'analytics'" class="max-w-7xl mx-auto w-full flex-grow p-2 sm:p-4 space-y-8">
+            <h2 class="text-2xl sm:text-3xl font-semibold text-emerald-700 mb-6">Study Analytics</h2>
+
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">{{ studyStats.totalCardsInSystem }}</div>
+                    <div class="stat-label">Total Study Cards</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);">
+                    <div class="stat-number">{{ studyStats.dashboardItems }}</div>
+                    <div class="stat-label">Items in Dashboard</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #10B981 0%, #3B82F6 100%);">
+                    <div class="stat-number">{{ studyStats.uniqueSubjectsInDashboard }}</div>
+                    <div class="stat-label">Unique Subjects in Dashboard</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);">
+                    <div class="stat-number">{{ studyStats.totalPYQs }}</div>
+                    <div class="stat-label">Previous Year Questions</div>
+                </div>
+            </section>
+
+            <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="chart-card">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Topics in Dashboard by Subject</h3>
+                    <div v-if="chartErrorMessage.subject" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 rounded-md shadow text-sm" role="alert">
+                        <p class="font-bold">Chart Error:</p><p>{{ chartErrorMessage.subject }}</p>
+                    </div>
+                    <div v-else-if="dashboardTopics.length === 0" class="text-center py-8 text-gray-500">No data for this chart yet. Add items to your dashboard.</div>
+                    <div v-else class="chart-container !h-[350px] sm:!h-[400px]"><canvas ref="analyticsSubjectChartEl"></canvas></div>
+                </div>
+
+                <div class="chart-card">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Subject Coverage Progress</h3>
+                     <div v-if="chartErrorMessage.progress" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 rounded-md shadow text-sm" role="alert">
+                        <p class="font-bold">Chart Error:</p><p>{{ chartErrorMessage.progress }}</p>
+                    </div>
+                    <div v-else-if="prelimsTopics.length === 0" class="text-center py-8 text-gray-500">No study cards available in the system to calculate coverage.</div>
+                    <div v-else-if="subjectCoverageData.labels.length === 0" class="text-center py-8 text-gray-500">No subjects with cards in dashboard to show coverage.</div>
+                    <div v-else class="chart-container !h-[350px] sm:!h-[400px]"><canvas ref="analyticsProgressChartEl"></canvas></div>
+                </div>
+            </section>
+            
+            <section class="chart-card">
+                <h3 class="text-xl font-semibold text-gray-700 mb-4">Dashboard Topic Mindmap</h3>
+                <div v-if="chartErrorMessage.mindmap" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 rounded-md shadow text-sm" role="alert">
+                    <p class="font-bold">Mindmap Error:</p><p>{{ chartErrorMessage.mindmap }}</p>
+                </div>
+                <div v-else-if="dashboardTopics.length === 0 && !chartErrorMessage.mindmap" class="text-center py-8 text-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2 text-gray-400"><path d="M8 3c0-1.1.9-2 2-2s2 .9 2 2v2c0 1.1-.9 2-2 2s-2-.9-2-2V3Z"/><path d="M16 3c0-1.1.9-2 2-2s2 .9 2 2v2c0 1.1-.9 2-2 2s-2-.9-2-2V3Z"/><path d="M12 18c0 1.1-.9 2-2 2s-2-.9-2-2v-2c0 1.1.9-2 2-2s2 .9 2 2v2Z"/><path d="M20 18c0 1.1-.9 2-2 2s-2-.9-2-2v-2c0 1.1.9-2 2-2s2 .9 2 2v2Z"/><path d="M4 10v1c0 1.1.9 2 2 2h2"/><path d="M16 11c1.1 0 2-.9 2-2v-1"/><path d="M12 5v11"/><path d="M9 5a2 2 0 0 0-2 2v1c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2h-1"/></svg>
+                    <p>Add items to your dashboard to see the mindmap analytics.</p>
+                </div>
+                <svg v-show="dashboardTopics.length > 0 && !chartErrorMessage.mindmap" ref="mindmapAnalyticsEl" class="markmap-svg-container"></svg>
+            </section>
+
+            <section class="chart-card">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
+                    <h3 class="text-xl font-semibold text-gray-700">Previous Year Questions by Year</h3>
+                    <button @click="handleLoadPYQs" class="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 text-white font-medium py-1.5 px-3 rounded-lg text-sm shadow transition-colors">
+                        Reload PYQ Data
+                    </button>
+                </div>
+                <div v-if="chartErrorMessage.pyqYear" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 rounded-md shadow text-sm" role="alert">
+                    <p class="font-bold">Chart Error:</p><p>{{ chartErrorMessage.pyqYear }}</p>
+                </div>
+                <div v-else-if="uploadedQuestions.length === 0" class="text-center py-8 text-gray-500">No PYQ data loaded. Click 'Reload PYQ Data'.</div>
+                <div v-else class="chart-container !h-[350px] sm:!h-[400px]"><canvas ref="analyticsQuestionYearChartEl"></canvas></div> 
+            </section>
+
+            <section class="bg-white p-4 sm:p-6 rounded-xl shadow-xl mt-8">
+                <h3 class="text-xl font-semibold text-indigo-600 mb-4">AI Question Generator</h3>
+                <div class="mb-4">
+                    <label for="questionPrompt" class="block text-sm font-medium text-gray-700 mb-1">Enter a topic for a UPSC-style question:</label>
+                    <input type="text" id="questionPrompt" v-model="questionPrompt" placeholder="e.g., 'Fundamental Rights' or 'Monsoon Mechanism'" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+                <button @click="generateQuestion" :disabled="isGeneratingQuestion" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors disabled:opacity-60 flex items-center">
+                    <div v-if="isGeneratingQuestion" class="loading-spinner !w-5 !h-5 !border-2 !border-l-white mr-2"></div>
+                    {{ isGeneratingQuestion ? 'Generating...' : 'Generate Question' }}
+                </button>
+                <div v-if="generatedQuestion" class="mt-4 p-4 border border-gray-200 rounded-md bg-gray-50 custom-scrollbar overflow-x-auto">
+                    <h4 class="font-semibold text-gray-700 mb-2">Generated Question:</h4>
+                    <div class="prose prose-sm max-w-none" v-html="generatedQuestion.replace(/\n/g, '<br>')"></div>
+                </div>
+            </section>
+        </main>
+
+        <div v-if="currentView === 'detail' && selectedCard" class="max-w-4xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full flex-grow flex flex-col custom-scrollbar overflow-y-auto" ref="detailViewContainer">
+            <div class="flex flex-col sm:flex-row justify-between items-start mb-6 gap-4">
+                <div>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-indigo-700 mb-2">{{ selectedCard.title }}</h2>
+                    <span :class="['inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold tracking-wide', getCardCategoryTagStyles(selectedCard.subject).tagBg, getCardCategoryTagStyles(selectedCard.subject).tagText]">
+                        <svg :class="['mr-1.5 h-3 w-3', getCardCategoryTagStyles(selectedCard.subject).circleFill]" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" /></svg>
+                        {{ selectedCard.subject }}
+                    </span>
+                </div>
+                <button @click="goToMain" class="text-indigo-600 hover:text-indigo-800 font-medium py-2 px-4 rounded-lg transition-colors hover:bg-indigo-50 self-start sm:self-center whitespace-nowrap">
+                    &larr; Back to Cards
+                </button>
+            </div>
+
+            <div class="prose max-w-none text-gray-700 mb-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">Summary:</h3>
+                <p class="text-gray-600">{{ selectedCard.summary }}</p>
+                
+                <h3 class="text-xl font-semibold text-gray-800 mb-2 mt-5">Content Details:</h3>
+                <div v-for="(paragraph, index) in formattedContent(selectedCard.content)" 
+                     :key="`content-${selectedCard.id}-${index}`" 
+                     v-html="paragraph.replace(/Related News(?: \(Refreshed\))?:/g, '<strong class=\'block text-md text-gray-700 mt-3 mb-1\'>Related News:</strong>')"
+                     class="text-gray-600">
+                </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">Further Readings & Sources:</h3>
+                
+                <div v-if="selectedCard.news_links && selectedCard.news_links.length > 0">
+                    <h4 class="text-md font-medium text-gray-700 mb-2">
+                        {{ selectedCard.type === 'prelims_pplx_research' ? 'News Articles (from Research)' : 'Recent News Articles' }}:
+                    </h4>
+                    <ul class="space-y-2 list-disc list-inside pl-1 mb-4">
+                        <li v-for="(newsItem, index) in selectedCard.news_links" :key="`news-${selectedCard.id}-${index}-${newsItem.url}`">
+                            <a :href="newsItem.url" target="_blank" rel="noopener noreferrer" 
+                               class="text-indigo-600 hover:text-indigo-800 hover:underline break-words transition-colors font-medium">
+                                {{ newsItem.title }}
+                            </a>
+                            <div class="text-xs text-gray-500 mt-0.5 ml-4">
+                                <span v-if="newsItem.source">Source: {{ newsItem.source }}</span>
+                                <span v-if="newsItem.source && newsItem.publishedAt"> &bull; </span>
+                                <span v-if="newsItem.publishedAt">{{ formatNewsDate(newsItem.publishedAt) }}</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div v-if="selectedCard.related_links && selectedCard.related_links.length > 0">
+                     <h4 class="text-md font-medium text-gray-700 mb-2">
+                        {{ selectedCard.type === 'prelims_pplx_research' ? 'Official & Additional Sources (from Research)' : 'General References' }}:
+                    </h4>
+                    <ul class="space-y-2 list-disc list-inside pl-1">
+                        <li v-for="(linkStr, index) in selectedCard.related_links" :key="`related-${selectedCard.id}-${index}`">
+                            <a :href="linkStr" target="_blank" rel="noopener noreferrer" 
+                               class="text-indigo-600 hover:text-indigo-800 hover:underline break-words transition-colors">
+                                {{ getLinkDomain(linkStr) }} 
+                            </a>
+                            <span v-if="selectedCard.type !== 'prelims_pplx_research'" class="text-xs text-gray-500 ml-1"> (Reference)</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div v-if="(!selectedCard.news_links || selectedCard.news_links.length === 0) && (!selectedCard.related_links || selectedCard.related_links.length === 0)">
+                    <p class="text-sm text-gray-500">No specific news or further reading links available for this topic.</p>
+                </div>
+            </div>
+
+
+            <div class="mt-8 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 mb-8">
+                 <button @click="addToDashboard" :disabled="isAlreadyInDashboard(selectedCard.id)" 
+                        class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-medium py-2.5 px-4 rounded-lg shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    {{ isAlreadyInDashboard(selectedCard.id) ? 'Added to Dashboard' : 'Add to Dashboard' }}
+                </button>
+                 <button @click="initiateRefresh(selectedCard, 'content')" :disabled="selectedCard.isRefreshing && selectedCard.activeRefreshType === 'content'" class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white font-medium py-2.5 px-4 rounded-lg shadow-md transition-colors disabled:opacity-50 flex items-center justify-center">
+                    <div v-if="selectedCard.isRefreshing && selectedCard.activeRefreshType === 'content'" class="card-refresh-spinner !w-4 !h-4 !border-l-white mr-2"></div>
+                    Refresh Content
+                </button>
+            </div>
+
+            <div v-if="selectedCard" class="mt-10 pt-6 border-t border-gray-300">
+                <h3 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-4">Related Practice Questions (MCQs)</h3>
+                
+                <div v-if="isFetchingPYQs && selectedCardPYQs.length === 0" class="text-center py-6">
+                    <div class="loading-spinner mx-auto mb-2"></div>
+                    <p class="text-gray-600">Generating relevant questions...</p>
+                </div>
+
+                <div v-if="!isFetchingPYQs && selectedCardPYQs.length === 0 && !pyqError && !noMorePYQs" class="text-center py-6 text-gray-500">
+                    <p>No practice questions generated yet for this topic.</p>
+                    <button @click="loadInitialPYQs" class="mt-3 bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+                        Generate Questions
+                    </button>
+                </div>
+                 <div v-if="!isFetchingPYQs && noMorePYQs && selectedCardPYQs.length === 0" class="text-center py-6 text-gray-500">
+                    <p>Could not generate practice questions for this specific topic at the moment.</p>
+                </div>
+                
+                <div v-if="pyqError" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded-md shadow">
+                    <p class="font-bold">Error Generating Questions</p>
+                    <p>{{ pyqError }}</p>
+                     <button @click="loadInitialPYQs" class="mt-3 bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+                        Retry
+                    </button>
+                </div>
+
+                <div v-if="selectedCardPYQs.length > 0" class="space-y-8">
+                    <div v-for="(pyq, index) in selectedCardPYQs" :key="pyq.id || `pyq-${selectedCard.id}-${index}`" class="bg-slate-50 p-4 rounded-lg shadow border border-slate-200">
+                        <p class="font-semibold text-gray-700 mb-3">{{ index + 1 }}. <span v-html="pyq.question.replace(/\n/g, '<br>')"></span></p>
+                        <div class="space-y-2 mb-3">
+                            <label v-for="option in pyq.options" :key="option.key" 
+                                   class="block p-2.5 rounded-md border transition-colors duration-150 ease-in-out cursor-pointer text-sm"
+                                   :class="{
+                                        'bg-green-100 border-green-500 text-green-800 font-medium': pyq.showAnswer && option.key === pyq.answer_key,
+                                        'bg-red-100 border-red-500 text-red-800': pyq.showAnswer && pyq.selectedAnswer === option.key && option.key !== pyq.answer_key,
+                                        'border-gray-300 hover:bg-gray-100': !pyq.showAnswer,
+                                        'bg-indigo-50 border-indigo-300': !pyq.showAnswer && pyq.selectedAnswer === option.key
+                                   }">
+                                <input type="radio" :name="`pyq-${pyq.id || index}`" :value="option.key" @change="selectPYQAnswer(pyq, option.key)" :disabled="pyq.showAnswer" class="mr-2 accent-indigo-600"/>
+                                <span class="font-medium">({{ option.key }})</span> {{ option.text }}
+                            </label>
+                        </div>
+                        <button v-if="!pyq.showAnswer && pyq.selectedAnswer" @click="revealPYQAnswer(pyq)" class="text-sm bg-blue-500 hover:bg-blue-600 text-white py-1.5 px-3 rounded-md shadow-sm transition-colors">
+                            Check Answer
+                        </button>
+                        <div v-if="pyq.showAnswer" class="mt-3 p-3 bg-gray-100 rounded-md text-sm border border-gray-200">
+                            <p class="mb-1"><strong :class="pyq.selectedAnswer === pyq.answer_key ? 'text-green-700' : 'text-red-700'">
+                                {{ pyq.selectedAnswer === pyq.answer_key ? 'Correct!' : 'Incorrect.' }}
+                            </strong> Correct Answer: <strong class="text-gray-800">({{ pyq.answer_key }}) {{ pyq.options.find(opt => opt.key === pyq.answer_key)?.text }}</strong></p>
+                            <p class="text-gray-700 mt-1"><strong class="font-medium text-gray-800">Relevance:</strong> {{ pyq.relevance_explanation }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="selectedCardPYQs.length > 0 && !isFetchingPYQs && !noMorePYQs && !pyqError" class="text-center mt-8">
+                    <button @click="loadMorePYQs" class="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2.5 px-5 rounded-lg shadow-md transition-colors">
+                        Load More Questions
+                    </button>
+                </div>
+                <div v-if="isFetchingPYQs && selectedCardPYQs.length > 0" class="text-center py-6">
+                    <div class="loading-spinner mx-auto mb-2"></div>
+                    <p class="text-gray-600">Generating more questions...</p>
+                </div>
+                <div v-if="noMorePYQs && selectedCardPYQs.length > 0 && !pyqError" class="text-center text-gray-500 py-6">
+                    <p>No more practice questions found for this topic.</p>
+                </div>
+            </div>
+            </div>
+
+        <footer class="text-center py-6 mt-auto text-gray-500 text-sm">
+            <p>&copy; {{ new Date().getFullYear() }} UPSC Prep Hub. AI by Gemini & Perplexity. For educational purposes.</p>
+        </footer>
+    </div>
+
+    <script> 
+        document.addEventListener('DOMContentLoaded', () => {
+            // Define constants at the top level of the script
+            const API_BASE_URL = 'http://localhost:8000/api'; 
+            // const WS_BASE_URL = 'ws://localhost:8000/ws'; // WebSocket URL no longer needed
+
+            const app = Vue.createApp({
+                setup() {
+                    // Core state - Use Vue.ref, Vue.computed, etc.
+                    const currentView = Vue.ref('main'); 
+                    const selectedCard = Vue.ref(null);
+                    const prelimsTopics = Vue.ref([]); 
+                    const dashboardTopics = Vue.ref([]); 
+                    const uploadedQuestions = Vue.ref([]); 
+                    const readLaterTopics = Vue.ref([]); 
+                    
+                    const selectedPrelimsSubject = Vue.ref('All'); 
+                    const isFetchingCards = Vue.ref(false); 
+                    const showScrollLoader = Vue.ref(false); 
+                    
+                    const globalMessage = Vue.ref('');
+                    const globalMessageType = Vue.ref('info'); 
+                    const showModal = Vue.ref(false);
+                    const modalTitle = Vue.ref('');
+                    const modalMessage = Vue.ref('');
+                    const modalType = Vue.ref('info');
+
+                    const showActionModal = Vue.ref(false);
+                    const actionModalTitle = Vue.ref('');
+                    const actionModalMessage = Vue.ref('');
+                    const actionModalType = Vue.ref('info');
+                    const actionModalButtonText = Vue.ref('Confirm');
+                    const actionModalAction = Vue.ref(() => {}); 
+
+                    // const prelimsSocket = Vue.ref(null); // WebSocket ref no longer needed
+
+                    const questionPrompt = Vue.ref('');
+                    const generatedQuestion = Vue.ref('');
+                    const isGeneratingQuestion = Vue.ref(false);
+
+                    const selectedCardPYQs = Vue.ref([]);
+                    const isFetchingPYQs = Vue.ref(false);
+                    const pyqError = Vue.ref('');
+                    const pyqOffset = Vue.ref(0);
+                    const pyqBatchSize = Vue.ref(3); 
+                    const noMorePYQs = Vue.ref(false);
+                    const detailViewContainer = Vue.ref(null); 
+
+                    const dashboardChartInstance = Vue.ref(null);
+                    const dashboardChartCanvasEl = Vue.ref(null);
+                    const analyticsSubjectChartInstance = Vue.ref(null);
+                    const analyticsSubjectChartEl = Vue.ref(null);
+                    const analyticsProgressChartInstance = Vue.ref(null); 
+                    const analyticsProgressChartEl = Vue.ref(null); 
+                    const analyticsQuestionYearChartInstance = Vue.ref(null);
+                    const analyticsQuestionYearChartEl = Vue.ref(null);
+                    const mindmapAnalyticsEl = Vue.ref(null); 
+                    const mindmapInstance = Vue.ref(null);   
+
+                    const chartErrorMessage = Vue.ref({ 
+                        dashboard: '', subject: '', progress: '', pyqYear: '', mindmap: ''
+                    });
+
+                    const filterCategories = Vue.ref([
+                        { name: 'All', value: 'All' },
+                        { name: 'Current Events', value: 'Current Events (National & Intl.)' },
+                        { name: 'History', value: 'History & Indian National Movement' },
+                        { name: 'Geography', value: 'Indian & World Geography' },
+                        { name: 'Polity', value: 'Indian Polity & Governance' },
+                        { name: 'Economy', value: 'Economic & Social Development' },
+                        { name: 'Environment', value: 'Environment, Biodiversity & Climate Change' },
+                        { name: 'Science', value: 'General Science' }
+                    ]);
+
+                    // How many cards to request per page/scroll for HTTP fetches
+                    const CARDS_PER_PAGE_HTTP = 6; 
+
+
+                    const filteredPrelimsTopics = Vue.computed(() => {
+                        if (selectedPrelimsSubject.value === 'All') {
+                            return prelimsTopics.value;
+                        }
+                        return prelimsTopics.value.filter(topic => topic.subject === selectedPrelimsSubject.value);
+                    });
+
+                    const studyStats = Vue.computed(() => ({
+                        totalCardsInSystem: prelimsTopics.value.length,
+                        totalPYQs: uploadedQuestions.value.length,
+                        dashboardItems: dashboardTopics.value.length,
+                        uniqueSubjectsInDashboard: new Set(dashboardTopics.value.map(t => t.subject)).size,
+                    }));
+
+                    const chartColors = [
+                        'rgba(75, 192, 192, 0.8)', 'rgba(255, 159, 64, 0.8)', 'rgba(153, 102, 255, 0.8)',
+                        'rgba(255, 99, 132, 0.8)', 'rgba(54, 162, 235, 0.8)', 'rgba(255, 206, 86, 0.8)',
+                        'rgba(120, 220, 150, 0.8)', 'rgba(240, 130, 190, 0.8)'
+                    ];
+                    const chartBorderColors = chartColors.map(color => color.replace('0.8', '1'));
+
+                    const dashboardChartData = Vue.computed(() => {
+                        const counts = {};
+                        dashboardTopics.value.forEach(topic => {
+                            const subject = topic.subject || 'Uncategorized';
+                            counts[subject] = (counts[subject] || 0) + 1;
+                        });
+                        const labels = Object.keys(counts);
+                        const dataValues = Object.values(counts);
+                        
+                        const backgroundColors = labels.map((_, index) => chartColors[index % chartColors.length]);
+                        const borderColors = labels.map((_, index) => chartBorderColors[index % chartBorderColors.length]);
+
+                        return {
+                            labels,
+                            datasets: [{
+                                label: 'Topics in Dashboard',
+                                data: dataValues,
+                                backgroundColor: backgroundColors,
+                                borderColor: borderColors,
+                                borderWidth: 1.5,
+                                borderRadius: 5,
+                                hoverOffset: 10,
+                                hoverBorderColor: 'rgba(0,0,0,0.5)',
+                                hoverBorderWidth: 2,
+                            }]
+                        };
+                    });
+                    
+                    const subjectCoverageData = Vue.computed(() => {
+                        const coverage = {};
+                        const allSubjectsInSystem = new Set(prelimsTopics.value.map(t => t.subject));
+                        const allSubjectsInDashboard = new Set(dashboardTopics.value.map(t => t.subject));
+                        const relevantSubjects = new Set([...allSubjectsInSystem, ...allSubjectsInDashboard].filter(Boolean)); 
+
+                        relevantSubjects.forEach(subject => {
+                            const totalInSystem = prelimsTopics.value.filter(t => t.subject === subject).length;
+                            const inDashboard = dashboardTopics.value.filter(t => t.subject === subject).length;
+                            if (totalInSystem > 0) {
+                                coverage[subject] = (inDashboard / totalInSystem) * 100;
+                            } else if (inDashboard > 0 && totalInSystem === 0) { 
+                                coverage[subject] = 100; 
+                            }
+                        });
+
+                        const labels = Object.keys(coverage);
+                        const dataValues = Object.values(coverage);
+                        const backgroundColors = labels.map((_, index) => chartColors[index % chartColors.length]);
+                        const borderColors = labels.map((_, index) => chartBorderColors[index % chartBorderColors.length]);
+
+                        return {
+                            labels,
+                            datasets: [{
+                                label: 'Coverage (%)',
+                                data: dataValues,
+                                backgroundColor: backgroundColors,
+                                borderColor: borderColors,
+                                borderWidth: 1,
+                                borderRadius: 4,
+                            }]
+                        };
+                    });
+                    
+                    const computedMindmapMarkdown = Vue.computed(() => {
+                        if (dashboardTopics.value.length === 0) {
+                            return "# Dashboard Analytics\n## No topics in dashboard to display.";
+                        }
+                        let markdown = "# Dashboard Topics Analysis\n";
+                        const categoriesForMindmap = filterCategories.value.filter(cat => cat.value !== 'All');
+                        let topicsAddedToMindmap = false;
+                        categoriesForMindmap.forEach(category => {
+                            const topicsInCategory = dashboardTopics.value.filter(topic => topic.subject === category.value);
+                            if (topicsInCategory.length > 0) {
+                                markdown += `## ${category.name.replace(/([*_`\[\]#])/g, '\\$1')}\n`; 
+                                topicsInCategory.forEach(topic => {
+                                    const safeTitle = topic.title.replace(/([*_`\[\]#])/g, '\\$1'); 
+                                    markdown += `### ${safeTitle}\n`;
+                                });
+                                topicsAddedToMindmap = true;
+                            }
+                        });
+                        if (!topicsAddedToMindmap) { 
+                             return "# Dashboard Analytics\n## No topics in dashboard match defined categories for mindmap.";
+                        }
+                        return markdown;
+                    });
+
+                    const displayGlobalMessage = (message, type = 'info', duration = 5000) => {
+                        globalMessage.value = message;
+                        globalMessageType.value = type;
+                        if (window.globalMessageTimeout) clearTimeout(window.globalMessageTimeout);
+                        window.globalMessageTimeout = setTimeout(() => { globalMessage.value = ''; }, duration);
+                    };
+                    
+                    const openModal = (title, message, type = 'info') => {
+                        modalTitle.value = title;
+                        modalMessage.value = message;
+                        modalType.value = type;
+                        showModal.value = true;
+                    };
+                    const closeModal = () => { showModal.value = false; };
+
+                    const openModalWithAction = (title, message, type = 'info', buttonText = 'Confirm', actionFn = () => {}) => {
+                        actionModalTitle.value = title;
+                        actionModalMessage.value = message;
+                        actionModalType.value = type;
+                        actionModalButtonText.value = buttonText;
+                        actionModalAction.value = actionFn;
+                        showActionModal.value = true;
+                    };
+                    const closeActionModal = () => { showActionModal.value = false; };
+                    const confirmActionModal = () => {
+                        if (typeof actionModalAction.value === 'function') {
+                            actionModalAction.value();
+                        }
+                        closeActionModal();
+                    };
+
+                    const loadDashboard = () => { 
+                        const storedTopics = localStorage.getItem('upscDashboardTopics');
+                        if(storedTopics) {
+                            dashboardTopics.value = JSON.parse(storedTopics);
+                        }
+                    };
+                    const saveDashboard = () => { 
+                        localStorage.setItem('upscDashboardTopics', JSON.stringify(dashboardTopics.value)); 
+                    };
+                    Vue.watch(dashboardTopics, saveDashboard, { deep: true });
+
+                    const isAlreadyInDashboard = (topicId) => dashboardTopics.value.some(topic => topic.id === topicId);
+                    
+                    const addToDashboard = () => {
+                        if (selectedCard.value && !isAlreadyInDashboard(selectedCard.value.id)) {
+                            dashboardTopics.value.unshift({ ...selectedCard.value }); 
+                            openModal('Success!', `"${selectedCard.value.title}" added to Dashboard.`, 'success');
+                        } else if (selectedCard.value) {
+                            openModal('Already Added', `"${selectedCard.value.title}" is already in your Dashboard.`, 'info');
+                        }
+                    };
+                    const removeFromDashboard = (topicId) => {
+                        const topicIndex = dashboardTopics.value.findIndex(t => t.id === topicId);
+                        if (topicIndex > -1) {
+                            const removedTitle = dashboardTopics.value[topicIndex].title;
+                            dashboardTopics.value.splice(topicIndex, 1);
+                            openModal('Removed', `"${removedTitle}" removed from Dashboard.`, 'info');
+                        }
+                    };
+                    const clearDashboard = () => {
+                        openModalWithAction(
+                            'Confirm Clear Dashboard',
+                            'Are you sure you want to remove all items from your dashboard? This action cannot be undone.',
+                            'warning',
+                            'Clear All',
+                            () => {
+                                dashboardTopics.value = [];
+                                openModal('Dashboard Cleared', 'All items have been removed from your dashboard.', 'success');
+                            }
+                        );
+                    };
+
+                    const loadReadLater = () => {
+                        const storedTopics = localStorage.getItem('upscReadLaterTopics');
+                        if (storedTopics) {
+                            readLaterTopics.value = JSON.parse(storedTopics);
+                        }
+                    };
+                    const saveReadLater = () => {
+                        localStorage.setItem('upscReadLaterTopics', JSON.stringify(readLaterTopics.value));
+                    };
+                    Vue.watch(readLaterTopics, saveReadLater, { deep: true });
+
+                    const isAlreadyInReadLater = (topicId) => readLaterTopics.value.some(topic => topic.id === topicId);
+
+                    const addToReadLater = (topic) => {
+                        if (topic && !isAlreadyInReadLater(topic.id)) {
+                            readLaterTopics.value.unshift({ ...topic }); 
+                            openModal('Added to Read Later', `"${topic.title}" has been added to your Read Later list.`, 'success');
+                        } else if (topic) {
+                            openModal('Already Added', `"${topic.title}" is already in your Read Later list.`, 'info');
+                        }
+                    };
+                    
+                    const goToMain = () => { currentView.value = 'main'; selectedCard.value = null; };
+                    const goToDashboard = () => { currentView.value = 'dashboard'; selectedCard.value = null; Vue.nextTick(renderDashboardChart); };
+                    const goToAnalytics = () => { 
+                        currentView.value = 'analytics'; 
+                        selectedCard.value = null; 
+                        Vue.nextTick(() => { 
+                            renderAnalyticsSubjectChart(); 
+                            renderAnalyticsProgressChart(); 
+                            renderAnalyticsQuestionYearChart(); 
+                            renderMindmapAnalytics(); 
+                        }); 
+                    };
+                    const viewCardDetail = (card) => { 
+                        selectedCard.value = card; 
+                        currentView.value = 'detail'; 
+                    };
+
+                    const formattedContent = (content) => {
+                        if (!content) return ['No content available.'];
+                        return content.split(/\n\s*\n/).map(para => para.trim()).filter(p => p !== '');
+                    };
+
+                    const getLinkDomain = (url, short = false) => {
+                        if (!url || typeof url !== 'string') return 'Invalid URL';
+                        try {
+                            const domain = new URL(url).hostname;
+                            if (short) {
+                                if (domain.includes('google.com')) return 'Google Search';
+                                if (domain.includes('pib.gov.in')) return 'PIB';
+                                if (domain.includes('wikipedia.org')) return 'Wikipedia';
+                                let mainDomain = domain.replace(/^www\./i, '').split('.')[0];
+                                return mainDomain.charAt(0).toUpperCase() + mainDomain.slice(1);
+                            }
+                            return domain;
+                        } catch (_) { return url.length > 35 ? url.substring(0, 32) + '...' : url; }
+                    };
+
+                    const formatNewsDate = (dateString) => {
+                        if (!dateString || dateString === "Date N/A") return ''; 
+                        try {
+                            const date = new Date(dateString);
+                            if (isNaN(date.getTime())) {
+                                // Attempt to parse common non-standard formats if ISO parsing fails
+                                const parts = dateString.match(/(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})/);
+                                if (parts) {
+                                    // Check if it's YYYY-MM-DD
+                                    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                         const [year, month, day] = dateString.split('-');
+                                         return new Date(year, month - 1, day).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                                    }
+                                    // Add other common format parsers here if needed
+                                }
+                                return dateString; // Return original if still unparsable
+                            }
+                            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                        } catch (e) {
+                            return dateString; // Fallback to original string on any error
+                        }
+                    };
+
+                    const getSubjectColor = (subjectKey) => { 
+                        const colorMap = {
+                            'All': { bg: 'bg-slate-600', text: 'text-white', border: 'border-slate-700', circleFill: 'fill-slate-500', tagBg: 'bg-slate-200', tagText: 'text-slate-800'},
+                            'General Science': { bg: 'bg-indigo-600', text: 'text-white', border: 'border-indigo-700', circleFill: 'fill-indigo-500', tagBg: 'bg-indigo-100', tagText: 'text-indigo-800'},
+                            'Current Events (National & Intl.)': { bg: 'bg-red-600', text: 'text-white', border: 'border-red-700', circleFill: 'fill-red-500', tagBg: 'bg-red-100', tagText: 'text-red-800'},
+                            'History & Indian National Movement': { bg: 'bg-purple-600', text: 'text-white', border: 'border-purple-700', circleFill: 'fill-purple-500', tagBg: 'bg-purple-100', tagText: 'text-purple-800'},
+                            'Indian & World Geography': { bg: 'bg-emerald-600', text: 'text-white', border: 'border-emerald-700', circleFill: 'fill-emerald-500', tagBg: 'bg-emerald-100', tagText: 'text-emerald-800'},
+                            'Indian Polity & Governance': { bg: 'bg-blue-600', text: 'text-white', border: 'border-blue-700', circleFill: 'fill-blue-500', tagBg: 'bg-blue-100', tagText: 'text-blue-800'},
+                            'Economic & Social Development': { bg: 'bg-amber-500', text: 'text-gray-800', border: 'border-amber-600', circleFill: 'fill-amber-500', tagBg: 'bg-amber-100', tagText: 'text-amber-800'},
+                            'Environment, Biodiversity & Climate Change': { bg: 'bg-green-600', text: 'text-white', border: 'border-green-700', circleFill: 'fill-green-500', tagBg: 'bg-green-100', tagText: 'text-green-800'}
+                        };
+                        return colorMap[subjectKey] || { bg: 'bg-gray-600', text: 'text-white', border: 'border-gray-700', circleFill: 'fill-gray-500', tagBg: 'bg-gray-200', tagText: 'text-gray-800'};
+                    };
+                    
+                    const getCardCategoryTagStyles = (subjectKey) => {
+                        const colors = getSubjectColor(subjectKey); 
+                        const tagBgClass = 'bg-white/80 backdrop-blur-sm'; 
+                        const tagTextClass = (colors.text === 'text-white' && subjectKey !== 'All') ? 'text-gray-700' : colors.text;
+                        return { tagBg: tagBgClass, tagText: tagTextClass, circleFill: colors.circleFill };
+                    };
+                    
+                    const categoryGradients = {
+                        'Current Events (National & Intl.)': 'linear-gradient(135deg, #ef4444 0%, #f59e0b 40%, #eab308 70%, #fef3c7 100%)', 
+                        'History & Indian National Movement': 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 40%, #5b21b6 70%, #c4b5fd 100%)', 
+                        'Indian & World Geography': 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 40%, #0891b2 70%, #a5f3fc 100%)', 
+                        'Indian Polity & Governance': 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 40%, #2563eb 70%, #bfdbfe 100%)', 
+                        'Economic & Social Development': 'linear-gradient(135deg, #facc15 0%, #eab308 40%, #ca8a04 70%, #fef9c3 100%)', 
+                        'Environment, Biodiversity & Climate Change': 'linear-gradient(135deg, #4ade80 0%, #22c55e 40%, #16a34a 70%, #bbf7d0 100%)', 
+                        'General Science': 'linear-gradient(135deg, #a855f7 0%, #9333ea 40%, #7e22ce 70%, #e9d5ff 100%)', 
+                        'default': 'linear-gradient(135deg, #64748b 0%, #94a3b8 50%, #cbd5e1 100%)'
+                    };
+
+                    const getCardBackgroundGradient = (topic) => {
+                        return categoryGradients[topic.subject] || categoryGradients['default'];
+                    };
+
+                    const selectCategoryFilter = (categoryValue) => {
+                        selectedPrelimsSubject.value = categoryValue;
+                        // No need for categoryOffsets with the new backend logic
+                        loadMainViewCards(true); 
+                    };
+                    
+                    const loadMainViewCards = async (isManualRefreshOrCategoryChange = false) => {
+                        if (!isManualRefreshOrCategoryChange && isFetchingCards.value) {
+                            return; 
+                        }
+
+                        if (isManualRefreshOrCategoryChange) {
+                            prelimsTopics.value = []; 
+                            // No WebSocket to close
+                            showScrollLoader.value = false; 
+                        }
+                        
+                        isFetchingCards.value = true;
+                        if (!isManualRefreshOrCategoryChange && prelimsTopics.value.length > 0) { 
+                            showScrollLoader.value = true;
+                        }
+                        globalMessage.value = '';
+
+                        const currentCategory = selectedPrelimsSubject.value;
+                        const titlesToExclude = prelimsTopics.value
+                            .filter(topic => currentCategory === 'All' || topic.subject === currentCategory)
+                            .map(topic => topic.title);
+
+                        displayGlobalMessage(`Fetching cards for '${currentCategory}'...`, "info", 4000);
+                        
+                        try {
+                            // Use the new endpoint: /api/generate_study_cards
+                            const response = await fetch(`${API_BASE_URL}/generate_study_cards`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ 
+                                    category: currentCategory,
+                                    count: CARDS_PER_PAGE_HTTP, // Request a batch of cards
+                                    exclude_titles: titlesToExclude // Send already displayed titles for this session/category
+                                })
+                            });
+                            if (!response.ok) {
+                                const errorData = await response.json().catch(() => ({ detail: `Backend responded with status ${response.status}` }));
+                                throw new Error(errorData.detail || `HTTP error ${response.status}`);
+                            }
+                            const newCards = await response.json(); 
+                            if (Array.isArray(newCards)) {
+                                const uniqueNewCards = newCards.filter(newCard => 
+                                    newCard.id && !prelimsTopics.value.some(existingCard => existingCard.id === newCard.id)
+                                );
+
+                                if (uniqueNewCards.length > 0) {
+                                    const formattedUniqueNewCards = uniqueNewCards.map(card => ({ ...card, isRefreshing: false, activeRefreshType: null }));
+                                    prelimsTopics.value.push(...formattedUniqueNewCards);
+                                } else if (newCards.length > 0 && !isManualRefreshOrCategoryChange) {
+                                    displayGlobalMessage(`No *new* unique cards found for '${currentCategory}' on this scroll. Fetched cards might be duplicates.`, "info", 4000);
+                                }
+                                
+                                if (newCards.length === 0 && !isManualRefreshOrCategoryChange) {
+                                    displayGlobalMessage(`No more cards found for '${currentCategory}'.`, "info", 3000);
+                                } else if (isManualRefreshOrCategoryChange && newCards.length === 0) {
+                                     displayGlobalMessage(`No cards found for '${currentCategory}'. Try a different category or refresh again later.`, "info", 5000);
+                                }
+
+                            } else {
+                                throw new Error("Invalid card data received from study cards endpoint.");
+                            }
+                        } catch (error) {
+                            console.error(`Error fetching study cards for ${currentCategory}:`, error);
+                            let detailedErrorMsg = `Error loading cards for '${currentCategory}': ${error.message}`;
+                            if (error.message.toLowerCase().includes("failed to fetch")) {
+                                detailedErrorMsg += `\n\nIs the backend server running at ${API_BASE_URL}?`;
+                                console.error("FETCH FAILED: Ensure backend server is running and accessible.");
+                            }
+                            displayGlobalMessage(detailedErrorMsg, "error", 10000);
+                            if (isManualRefreshOrCategoryChange) { prelimsTopics.value = []; } 
+                        } finally {
+                            isFetchingCards.value = false;
+                            showScrollLoader.value = false;
+                        }
+                    };
+                    
+                    const initiateRefresh = async (topicToRefresh, refreshType) => {
+                        if (!topicToRefresh || topicToRefresh.isRefreshing) return;
+                        const updateRefreshingState = (id, refreshing, type) => {
+                            const prelimTopic = prelimsTopics.value.find(t => t.id === id);
+                            if (prelimTopic) { prelimTopic.isRefreshing = refreshing; prelimTopic.activeRefreshType = type; }
+                            const dashboardTopic = dashboardTopics.value.find(t => t.id === id);
+                            if (dashboardTopic) { dashboardTopic.isRefreshing = refreshing; dashboardTopic.activeRefreshType = type; }
+                            if (selectedCard.value && selectedCard.value.id === id) { selectedCard.value.isRefreshing = refreshing; selectedCard.value.activeRefreshType = type; }
+                        };
+                        updateRefreshingState(topicToRefresh.id, true, refreshType);
+                        globalMessage.value = '';
+                        try {
+                            const response = await fetch(`${API_BASE_URL}/refresh_card`, { 
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    card_id: topicToRefresh.id, current_title: topicToRefresh.title,
+                                    current_subject: topicToRefresh.subject, refresh_type: refreshType
+                                }),
+                            });
+                            if (!response.ok) {
+                                const errorData = await response.json().catch(() => ({ detail: `Backend responded with status ${response.status}` }));
+                                throw new Error(errorData.detail || `HTTP error ${response.status}`);
+                            }
+                            const result = await response.json();
+                            if (result.card) {
+                                const refreshedCardData = { ...result.card, isRefreshing: false, activeRefreshType: null };
+                                const prelimIndex = prelimsTopics.value.findIndex(t => t.id === refreshedCardData.id);
+                                if (prelimIndex !== -1) prelimsTopics.value.splice(prelimIndex, 1, refreshedCardData);
+                                const dashboardIndex = dashboardTopics.value.findIndex(t => t.id === refreshedCardData.id);
+                                if (dashboardIndex !== -1) dashboardTopics.value.splice(dashboardIndex, 1, refreshedCardData);
+                                if (selectedCard.value && selectedCard.value.id === refreshedCardData.id) {
+                                    selectedCard.value = { ...refreshedCardData };
+                                }
+                                displayGlobalMessage(`Card "${refreshedCardData.title}" refreshed (${refreshType}).`, 'success');
+                            } else { throw new Error(result.message || "Unknown error during card refresh."); }
+                        } catch (error) {
+                            console.error(`Error refreshing card (type: ${refreshType}):`, error);
+                            displayGlobalMessage(`Error refreshing card: ${error.message}`, 'error', 10000);
+                        } finally { updateRefreshingState(topicToRefresh.id, false, null); }
+                    };
+
+                    const generateQuestion = async () => { 
+                        if (!questionPrompt.value.trim()) { displayGlobalMessage('Please enter a topic.', 'error'); return; }
+                        isGeneratingQuestion.value = true; generatedQuestion.value = 'Generating...'; globalMessage.value = '';
+                        try {
+                            const response = await fetch(`${API_BASE_URL}/generate_question_streaming`, { 
+                                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ prompt: questionPrompt.value }),
+                            });
+                            if (!response.ok || !response.body) {
+                                const errorData = await response.json().catch(() => ({ detail: `Backend responded with status ${response.status}` }));
+                                throw new Error(errorData.detail || `HTTP error ${response.status}.`);
+                            }
+                            const reader = response.body.getReader(); const decoder = new TextDecoder();
+                            generatedQuestion.value = ''; 
+                            while (true) {
+                                const { done, value } = await reader.read(); if (done) break;
+                                generatedQuestion.value += decoder.decode(value, { stream: true });
+                            }
+                            displayGlobalMessage('Question generated!', 'success');
+                        } catch (error) {
+                            console.error('Error generating question:', error);
+                            displayGlobalMessage(`Error: ${error.message}`, 'error', 10000);
+                            generatedQuestion.value = `Error. Check console.`;
+                        } finally { isGeneratingQuestion.value = false; }
+                    };
+                    
+                    const dummyUPSCQuestions = [ 
+                        { id: 'pyq-1', type: 'pyq', topic: 'Indian Polity & Governance', year: 2023, question: 'Which one of the following is not a feature of Indian federalism? (A) Independent Judiciary (B) Division of powers between centre and states (C) Single citizenship (D) Bicameral legislature. Answer: C', summary: 'Feature of Indian federalism', subject: 'Indian Polity & Governance', related_links: [`https://www.google.com/search?q=Indian+federalism+UPSC`] },
+                        { id: 'pyq-2', type: 'pyq', topic: 'Economic & Social Development', year: 2023, question: 'Consider the following statements regarding the Goods and Services Tax (GST) in India: 1. It is a destination-based tax. 2. Petroleum products are currently outside the purview of GST. Which of the statements given above is/are correct? (A) 1 only (B) 2 only (C) Both 1 and 2 (D) Neither 1 nor 2. Answer: C', summary: 'GST in India', subject: 'Economic & Social Development', related_links: [`https://www.google.com/search?q=GST+India+UPSC`] },
+                        { id: 'pyq-3', type: 'pyq', topic: 'History & Indian National Movement', year: 2022, question: 'The term "Cripps Mission" is associated with: (A) Formation of Constituent Assembly (B) India\'s partition (C) Proposal for Dominion Status during WWII (D) Quit India Movement. Answer: C', summary: 'Cripps Mission', subject: 'History & Indian National Movement', related_links: [`https://www.google.com/search?q=Cripps+Mission+UPSC`] },
+                    ];
+                    const handleLoadPYQs = () => { 
+                        uploadedQuestions.value = dummyUPSCQuestions.map(q => ({...q, content: q.question})); 
+                        displayGlobalMessage('Sample PYQs loaded!', 'info');
+                        Vue.nextTick(() => { if(currentView.value === 'analytics') renderAnalyticsQuestionYearChart(); });
+                    };
+
+                    const selectPYQAnswer = (pyqItem, optionKey) => { pyqItem.selectedAnswer = optionKey; };
+                    const revealPYQAnswer = (pyqItem) => { pyqItem.showAnswer = true; };
+                    const fetchRelatedPYQs = async (loadMore = false) => {
+                        if (!selectedCard.value || isFetchingPYQs.value) return;
+                        isFetchingPYQs.value = true; pyqError.value = '';
+                        if (!loadMore) { selectedCardPYQs.value = []; pyqOffset.value = 0; noMorePYQs.value = false; }
+
+                        const requestUrl = `${API_BASE_URL}/generate_related_pyqs`;
+                        try {
+                            const response = await fetch(requestUrl, { 
+                                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    topic_title: selectedCard.value.title, topic_content: selectedCard.value.content,
+                                    subject: selectedCard.value.subject, offset: pyqOffset.value,
+                                    count: pyqBatchSize.value, exclude_ids: selectedCardPYQs.value.map(q => q.id).filter(id => id)
+                                }),
+                            });
+                            if (!response.ok) {
+                                const errorData = await response.json().catch(() => ({ detail: `Backend responded with ${response.status}` }));
+                                throw new Error(errorData.detail || `HTTP error ${response.status}`);
+                            }
+                            const result = await response.json();
+                            if (result.pyqs && result.pyqs.length > 0) {
+                                const newPYQs = result.pyqs.map(q => ({ ...q, selectedAnswer: null, showAnswer: false }));
+                                selectedCardPYQs.value.push(...newPYQs);
+                                pyqOffset.value += newPYQs.length;
+                                if (newPYQs.length < pyqBatchSize.value) noMorePYQs.value = true;
+                            } else {
+                                noMorePYQs.value = true;
+                                if (loadMore) displayGlobalMessage("No more questions found.", "info", 3000);
+                            }
+                        } catch (error) {
+                            console.error('Error fetching related PYQs from URL:', requestUrl, error); 
+                            let detailedErrorMessage = "Failed to load practice questions. ";
+                            if (error instanceof TypeError && error.message.toLowerCase().includes("failed to fetch")) { 
+                                detailedErrorMessage += `This might be due to the backend server not running at ${API_BASE_URL}, a network issue, or a CORS problem. Please ensure the server is active, the endpoint /api/generate_related_pyqs is available, and check the browser's developer console (Network tab) for more details. Attempted to reach: ${requestUrl}`;
+                            } else {
+                                detailedErrorMessage += error.message || "An unknown error occurred.";
+                            }
+                            pyqError.value = detailedErrorMessage;
+                            if (!loadMore) selectedCardPYQs.value = []; 
+                        } finally { isFetchingPYQs.value = false; }
+                    };
+                    const loadInitialPYQs = () => { fetchRelatedPYQs(false); };
+                    const loadMorePYQs = () => { fetchRelatedPYQs(true); };
+                    
+                    const renderChart = (canvasElRef, chartInstanceRef, chartType, chartData, chartOptions, errorMsgKey) => {
+                        chartErrorMessage.value[errorMsgKey] = ''; 
+                        if (typeof Chart === 'undefined') { 
+                            chartErrorMessage.value[errorMsgKey] = 'Charting library (Chart.js) not loaded.'; 
+                            console.error('Charting library (Chart.js) not loaded.'); return; 
+                        }
+                        const canvasElement = canvasElRef.value;
+                        if (!canvasElement) { 
+                            chartErrorMessage.value[errorMsgKey] = `Chart canvas DOM element not found for ${errorMsgKey}. Check ref name and ensure it's correctly assigned in the template.`; 
+                            console.error(`Chart canvas DOM element not found for ${errorMsgKey}. Ref value is null.`); return; 
+                        }
+                        if (!canvasElement.isConnected) {
+                            console.warn(`Chart canvas for ${errorMsgKey} is not connected to the DOM. Aborting render.`);
+                            chartErrorMessage.value[errorMsgKey] = 'Chart canvas not ready (not connected to DOM).'; return;
+                        }
+                        if (chartInstanceRef.value) { chartInstanceRef.value.destroy(); }
+                        if (!chartData || !chartData.labels || chartData.labels.length === 0 || (chartData.datasets && chartData.datasets.every(ds => ds.data.length === 0))) {
+                            console.log(`No data to render for chart: ${errorMsgKey}`); return; 
+                        }
+                        try { 
+                            chartInstanceRef.value = new Chart(canvasElement, { type: chartType, data: chartData, options: chartOptions }); 
+                        } catch (e) { 
+                            console.error(`Error rendering ${errorMsgKey} chart:`, e); 
+                            chartErrorMessage.value[errorMsgKey] = `Failed to render chart. ${e.message}`; 
+                        }
+                    };
+                    const renderDashboardChart = () => {
+                        const options = { 
+                            responsive: true, maintainAspectRatio: false, 
+                            plugins: { 
+                                legend: { display: true, position: 'bottom', labels: { padding: 15, usePointStyle: true, pointStyle: 'rectRounded', boxWidth:12, font: {size: 11} }}, 
+                                title: { display: false }, 
+                                tooltip: { 
+                                    callbacks: { label: function(context) { let label = context.label || ''; if (label) { label += ': '; } const value = context.raw; const total = context.chart.getDatasetMeta(0).total; const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%'; return `${label}${value} (${percentage})`; } },
+                                    backgroundColor: 'rgba(0,0,0,0.75)', titleFont: { size: 14, weight: 'bold'}, bodyFont: { size: 12 }, padding: 10, cornerRadius: 4, displayColors: true, boxPadding: 3
+                                } 
+                            },
+                            animation: { animateScale: true, animateRotate: true }
+                        };
+                        renderChart(dashboardChartCanvasEl, dashboardChartInstance, 'doughnut', dashboardChartData.value, options, 'dashboard');
+                    };
+                    const renderAnalyticsSubjectChart = () => {
+                        const data = { labels: dashboardChartData.value.labels, datasets: [{...dashboardChartData.value.datasets[0], label: 'Topics in Dashboard'}]};
+                        const options = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: {boxWidth:12, font: {size: 11}} }, title: {display: false}, tooltip: { callbacks: { label: function(context) { let label = context.label || ''; if (label) { label += ': '; } const value = context.raw; const total = context.chart.getDatasetMeta(0).total; const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%'; return `${label}${value} (${percentage})`; } } } }};
+                        renderChart(analyticsSubjectChartEl, analyticsSubjectChartInstance, 'pie', data, options, 'subject');
+                    };
+                    const renderAnalyticsProgressChart = () => { 
+                        const data = subjectCoverageData.value;
+                        const options = { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, max: 100, ticks: { precision: 0, callback: function(value) { return value + "%" } } }, y: { ticks: { font: {size: 10} } } }, plugins: { legend: { display: false }, title: { display: false }, tooltip: { callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.x !== null) { label += context.parsed.x.toFixed(1) + '%'; } return label; } } } } };
+                        renderChart(analyticsProgressChartEl, analyticsProgressChartInstance, 'bar', data, options, 'progress');
+                    };
+                    const renderAnalyticsQuestionYearChart = () => {
+                        const yearCounts = {};
+                        uploadedQuestions.value.forEach(q => { yearCounts[q.year] = (yearCounts[q.year] || 0) + 1; });
+                        const sortedYears = Object.keys(yearCounts).sort((a,b) => parseInt(a)-parseInt(b));
+                        const data = { labels: sortedYears, datasets: [{ label: 'PYQs by Year', data: sortedYears.map(year => yearCounts[year]), backgroundColor: chartColors.slice(0, sortedYears.length), borderColor: chartBorderColors.slice(0, sortedYears.length), borderWidth: 1, borderRadius: 4 }] };
+                        const options = { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } };
+                        renderChart(analyticsQuestionYearChartEl, analyticsQuestionYearChartInstance, 'bar', data, options, 'pyqYear');
+                    };
+                    const renderMindmapAnalytics = () => {
+                        if (currentView.value !== 'analytics') return; 
+                        
+                        const svgEl = mindmapAnalyticsEl.value;
+                        if (!svgEl) {
+                            console.warn("Mindmap SVG element not found in DOM for analytics.");
+                            chartErrorMessage.value.mindmap = 'Mindmap container element not found.';
+                            return;
+                        }
+
+                        if (typeof window.markmap === 'undefined' || typeof window.markmap.Transformer === 'undefined' || typeof window.markmap.Markmap === 'undefined') {
+                            console.error('Markmap libraries not loaded.'); 
+                            chartErrorMessage.value.mindmap = 'Mindmap library not loaded. Please refresh the page.';
+                            svgEl.innerHTML = ''; // Clear if lib not loaded
+                            return;
+                        }
+                        
+                        chartErrorMessage.value.mindmap = ''; 
+
+                        if (dashboardTopics.value.length === 0) {
+                            console.log("No dashboard topics to render in mindmap.");
+                            svgEl.innerHTML = ''; // Clear if no data
+                            if (mindmapInstance.value) { // If an old instance exists
+                               // Markmap doesn't have a formal destroy, but nullify ref
+                               mindmapInstance.value = null;
+                            }
+                            return; // Don't attempt to render if no topics
+                        }
+
+                        if (!svgEl.isConnected) {
+                            console.warn("Mindmap SVG element is not connected to the DOM during render attempt.");
+                            chartErrorMessage.value.mindmap = 'Mindmap container not ready in DOM.';
+                            return;
+                        }
+                        
+                        try {
+                            // Clear the SVG content directly and nullify old instance
+                            svgEl.innerHTML = ''; 
+                            mindmapInstance.value = null; 
+
+                            const transformer = new window.markmap.Transformer();
+                            const { root, features } = transformer.transform(computedMindmapMarkdown.value);
+                            
+                            const markmapOptions = { 
+                                autoFit: true, // Changed to true
+                                colorFreezeLevel: 2, 
+                                duration: 500, 
+                                initialExpandLevel: 2,
+                                zoom: true, // Enable zoom
+                                pan: true,  // Enable pan
+                            };
+                            mindmapInstance.value = window.markmap.Markmap.create(svgEl, markmapOptions, root);
+                        } catch (e) {
+                            console.error("Error rendering mindmap:", e); 
+                            chartErrorMessage.value.mindmap = `Failed to render mindmap: ${e.message}. Check console.`;
+                            svgEl.innerHTML = `<text x="10" y="30" font-family="Inter, sans-serif" font-size="14" fill="red">Error: Could not render mindmap. ${e.message}</text>`;
+                        }
+                    };
+
+                    const handleScroll = () => { 
+                        if (currentView.value !== 'main' || isFetchingCards.value ) return; 
+                        const nearBottom = (window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight - 300; 
+                        if (nearBottom) {
+                            loadMainViewCards(false); 
+                        }
+                    };
+                    
+                    Vue.onMounted(() => {
+                        loadDashboard(); loadReadLater(); loadMainViewCards(true); handleLoadPYQs(); 
+                        window.addEventListener('scroll', handleScroll); 
+                        if (currentView.value === 'dashboard') { Vue.nextTick(renderDashboardChart);
+                        } else if (currentView.value === 'analytics') {
+                             Vue.nextTick(() => { renderAnalyticsSubjectChart(); renderAnalyticsProgressChart(); renderAnalyticsQuestionYearChart(); renderMindmapAnalytics(); });
+                        }
+                    });
+                    Vue.onUnmounted(() => {
+                        window.removeEventListener('scroll', handleScroll);
+                        // if (prelimsSocket.value && prelimsSocket.value.readyState === WebSocket.OPEN) prelimsSocket.value.close(); // WebSocket removed
+                        if(dashboardChartInstance.value) dashboardChartInstance.value.destroy();
+                        if(analyticsSubjectChartInstance.value) analyticsSubjectChartInstance.value.destroy();
+                        if(analyticsProgressChartInstance.value) analyticsProgressChartInstance.value.destroy();
+                        if(analyticsQuestionYearChartInstance.value) analyticsQuestionYearChartInstance.value.destroy();
+                        mindmapInstance.value = null; 
+                    });
+                    Vue.watch(selectedCard, (newCard) => {
+                        if (newCard && currentView.value === 'detail') { loadInitialPYQs(); 
+                        } else { selectedCardPYQs.value = []; pyqError.value = ''; noMorePYQs.value = false; pyqOffset.value = 0;}
+                    });
+                    
+                    Vue.watch(
+                        [dashboardTopics, currentView], 
+                        () => {
+                            if (currentView.value === 'analytics') {
+                                Vue.nextTick(() => {
+                                    renderAnalyticsSubjectChart();
+                                    renderAnalyticsProgressChart();
+                                    renderAnalyticsQuestionYearChart(); 
+                                    renderMindmapAnalytics(); 
+                                });
+                            }
+                            if (currentView.value === 'dashboard') {
+                                Vue.nextTick(renderDashboardChart);
+                            }
+                        },
+                        { deep: true } 
+                    );
+
+                    Vue.watch(currentView, (newViewVal) => { 
+                        if (newViewVal === 'analytics') {
+                            Vue.nextTick(() => { 
+                                renderAnalyticsSubjectChart(); 
+                                renderAnalyticsProgressChart(); 
+                                renderAnalyticsQuestionYearChart(); 
+                                renderMindmapAnalytics(); 
+                            });
+                        } else if (newViewVal === 'dashboard') {
+                            Vue.nextTick(renderDashboardChart);
+                        }
+                        if (newViewVal !== 'detail') { 
+                            selectedCardPYQs.value = []; 
+                            pyqError.value = ''; 
+                            noMorePYQs.value = false; 
+                            pyqOffset.value = 0; 
+                        }
+                    });
+
+                    return { 
+                        currentView, selectedCard, prelimsTopics, selectedPrelimsSubject, uploadedQuestions, readLaterTopics,
+                        questionPrompt, generatedQuestion, isGeneratingQuestion,
+                        isFetchingCards, dashboardTopics, globalMessage, globalMessageType, 
+                        showModal, modalTitle, modalMessage, modalType, 
+                        showActionModal, actionModalTitle, actionModalMessage, actionModalType, actionModalButtonText,
+                        chartErrorMessage, showScrollLoader, 
+                        filteredPrelimsTopics, studyStats, subjectCoverageData,
+                        openModal, closeModal, openModalWithAction, closeActionModal, confirmActionModal,
+                        isAlreadyInDashboard, goToMain, goToDashboard, goToAnalytics, viewCardDetail,
+                        addToDashboard, removeFromDashboard, clearDashboard, 
+                        addToReadLater, isAlreadyInReadLater, 
+                        loadMainViewCards, initiateRefresh, 
+                        handleLoadPYQs, generateQuestion,
+                        formattedContent, getLinkDomain, formatNewsDate, 
+                        getSubjectColor, getCardCategoryTagStyles, getCardBackgroundGradient, 
+                        filterCategories, selectCategoryFilter,
+                        dashboardChartCanvasEl, analyticsSubjectChartEl, analyticsProgressChartEl, analyticsQuestionYearChartEl,
+                        mindmapAnalyticsEl, 
+                        selectedCardPYQs, isFetchingPYQs, pyqError, loadInitialPYQs, loadMorePYQs, selectPYQAnswer, revealPYQAnswer, noMorePYQs, detailViewContainer
+                    };
+                }
+            });
+            app.mount('#app');
+        });
+    </script>
+</body>
+</html>
